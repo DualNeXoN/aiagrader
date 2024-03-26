@@ -205,6 +205,13 @@ class BlockLogicBoolean extends Block {
     }
 }
 
+class BlockLogicNegate extends Block {
+
+    function __construct($data) {
+        parent::__construct($data);
+    }
+}
+
 class BlockGlobalDeclaration extends Block {
 
     protected $field;

@@ -56,6 +56,7 @@ class Project {
         foreach ($this->blocks as $block) {
             echo "[" . $index . "]<br>";
             echo str_pad("Class:", $spacing) . get_class($block) . "<br>";
+            echo str_pad("Type:", $spacing) . $block->getType() . "<br>";
             echo str_pad("ID:", $spacing) . $block->getId() . "<br>";
             echo str_pad("Screen:", $spacing) . $block->getScreen() . "<br>";
             echo str_pad("Parent:", $spacing) . ($block->getParent() !== null ? $block->getParent()->getId() : "no parent") . "<br>";
@@ -191,7 +192,7 @@ abstract class ProjectHandler {
     }
 
     static function createInstancesOfBlocks($blocksRawData) {
-        print_r($blocksRawData);
+        //print_r($blocksRawData);
         $blocks = array();
 
         //create instances
@@ -272,6 +273,8 @@ abstract class ProjectHandler {
                 return new BlockGlobalDeclaration($blockData);
             case "controls_if":
                 return new BlockControlsIf($blockData);
+            case "logic_negate":
+                return new BlockLogicNegate($blockData);
             default:
                 return new Block($blockData);
         }
