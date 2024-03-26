@@ -5,13 +5,14 @@ class Project {
     private ?String $projectName;
     private array $components;
     private array $blocks;
-    private array $globalVariables;
+    private array $variables;
 
-    function __construct($projectName, $components, $blocks, $globalVariables = array()) {
+    function __construct($projectName, $components, $blocks, $variables = array()) {
         $this->projectName = $projectName;
         $this->components = $components;
         $this->blocks = $blocks;
-        $this->globalVariables = $globalVariables;
+        $this->variables = $variables;
+        $this->addProjectReferenceToBlocks();
     }
 
     public function getComponents(): array {
@@ -22,8 +23,39 @@ class Project {
         return $this->blocks;
     }
 
-    public function getGlobalVariables(): array {
-        return $this->globalVariables;
+    public function getVariable($key): mixed {
+        if(!isset($this->variables[$key])) {
+            if(!str_starts_with($key, "global ")) {
+                $this->setVariable($key, 0);
+            }
+        }
+        return $this->variables[$key];
+    }
+
+    public function setVariable($key, $value): void {
+        $this->variables[$key] = $value;
+    }
+
+    private function addProjectReferenceToBlocks(): void {
+        foreach ($this->blocks as $block) {
+            $block->setProject($this);
+        }
+    }
+
+    public function getComponentByName($componentName): mixed {
+        foreach ($this->components as $component) {
+            if ($component->getName() === $componentName) return $component;
+        }
+        return null;
+    }
+
+    public function getStartingBlocks(): array {
+        $startingBlocks = array();
+        foreach ($this->blocks as $block) {
+            if (!$block->isStartingBlock()) continue;
+            $startingBlocks[] = $block;
+        }
+        return $startingBlocks;
     }
 
     public function info(): void {
@@ -31,10 +63,12 @@ class Project {
         echo "Project name: " . ($this->projectName !== null ? $this->projectName : "null") . "<br>";
         echo "Components count: " . count($this->components) . "<br>";
         echo "Blocks count: " . count($this->blocks) . "<br>";
+        echo "Variables:<br>";
+        print_r($this->variables);
         echo "<h5>Component list:</h5>";
         $this->info_componentList();
-        echo "<h5>Block list:</h5>";
-        $this->info_blockList();
+        //echo "<h5>Block list:</h5>";
+        //$this->info_blockList();
     }
 
     public function info_componentList($spacing = 11): void {
@@ -46,6 +80,8 @@ class Project {
             echo str_pad("Name:", $spacing) . $component->getName() . "<br>";
             echo str_pad("Screen:", $spacing) . $component->getScreen() . "<br>";
             echo str_pad("Uuid:", $spacing) . $component->getUuid() . "<br>";
+            echo "Props:<br>";
+            print_r($component->getProperties());
             echo "<br>";
             $index++;
         }
@@ -91,6 +127,9 @@ class Project {
         foreach ($this->blocks as $block) {
             if (get_class($block) !== BlockControlsIf::class) continue;
             echo "[" . $index . "] ID: " . $block->getId() . "<br>";
+            echo str_pad("HasElseIf:", $spacing) . $block->hasElseIf() . "<br>";
+            echo ($block->hasElseIf() ? str_pad("ElseIf ID:", $spacing) . $block->getElseifCondition()->getId() . "<br>" : "");
+            echo str_pad("HasElse:", $spacing) . $block->hasElse() . "<br>";
             echo "Children:<br>";
             foreach ($block->getCode() as $key => $children) {
                 foreach ($children as $child) {
@@ -201,7 +240,7 @@ abstract class ProjectHandler {
             $blocks[] = $newBlock;
         }
 
-        //add paremt/child
+        //add parent/child
         foreach ($blocksRawData as $blockRaw) {
             $blockChild = ProjectHandler::getBlockById($blocks, $blockRaw['id']);
             $blockParent = ProjectHandler::getBlockById($blocks, $blockRaw['parent']);
@@ -234,7 +273,12 @@ abstract class ProjectHandler {
             $cycle = 0;
             $arrayDecider = [1 => 'if', 2 => 'elseif', 3 => 'else'];
             foreach ($blockControlsIf->getChild() as $child) {
-                if ($child->getSequence() === 1) $cycle++;
+                if ($child->getSequence() === 1) {
+                    $cycle++;
+                    if($cycle === 2 && !$blockControlsIf->hasElseif()) {
+                        $cycle++;
+                    }
+                }
                 $blockControlsIf->addCode($arrayDecider[$cycle], $child);
             }
         }
@@ -267,6 +311,10 @@ abstract class ProjectHandler {
                 return new BlockText($blockData);
             case "math_number":
                 return new BlockMathNumber($blockData);
+            case "math_add":
+                return new BlockMathAdd($blockData);
+            case "math_compare":
+                return new BlockMathCompare($blockData);
             case "logic_boolean":
                 return new BlockLogicBoolean($blockData);
             case "global_declaration":
@@ -275,6 +323,10 @@ abstract class ProjectHandler {
                 return new BlockControlsIf($blockData);
             case "logic_negate":
                 return new BlockLogicNegate($blockData);
+            case "lexical_variable_set":
+                return new BlockLexicalVariableSet($blockData);
+            case "lexical_variable_get":
+                return new BlockLexicalVariableGet($blockData);
             default:
                 return new Block($blockData);
         }
