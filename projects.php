@@ -39,7 +39,7 @@ class Project {
 
     public function info_componentList($spacing = 11): void {
         $index = 0;
-        foreach($this->components as $component) {
+        foreach ($this->components as $component) {
             echo "[" . $index . "]<br>";
             echo str_pad("Class:", $spacing) . get_class($component) . "<br>";
             echo str_pad("Type:", $spacing) . $component->getType() . "<br>";
@@ -53,7 +53,7 @@ class Project {
 
     public function info_blockList($spacing = 11): void {
         $index = 0;
-        foreach($this->blocks as $block) {
+        foreach ($this->blocks as $block) {
             echo "[" . $index . "]<br>";
             echo str_pad("Class:", $spacing) . get_class($block) . "<br>";
             echo str_pad("ID:", $spacing) . $block->getId() . "<br>";
@@ -67,14 +67,14 @@ class Project {
 
     public function info_children_class($clazz = Block::class, $spacing = 11): void {
         $index = 0;
-        foreach($this->blocks as $block) {
-            if(get_class($block) !== $clazz) continue;
+        foreach ($this->blocks as $block) {
+            if (get_class($block) !== $clazz) continue;
             echo "[" . $index . "]<br>";
             echo str_pad("Class:", $spacing) . get_class($block) . "<br>";
             echo str_pad("ID:", $spacing) . $block->getId() . "<br>";
             echo "Children:<br>";
             $indexChild = 0;
-            foreach($block->getChild() as $child) {
+            foreach ($block->getChild() as $child) {
                 echo "[" . $index . "-" . $indexChild . "]<br>";
                 echo str_pad("Class:", $spacing) . get_class($child) . "<br>";
                 echo str_pad("ID:", $spacing) . $child->getID() . "<br>";
@@ -85,6 +85,20 @@ class Project {
         }
     }
 
+    public function info_controls_if($spacing = 11): void {
+        $index = 0;
+        foreach ($this->blocks as $block) {
+            if (get_class($block) !== BlockControlsIf::class) continue;
+            echo "[" . $index . "] ID: " . $block->getId() . "<br>";
+            echo "Children:<br>";
+            foreach ($block->getCode() as $key => $children) {
+                foreach ($children as $child) {
+                    echo  str_pad($key, 8) . "-> Class: " . get_class($child) . "(" . $child->getType() . ") ID: " . $child->getId() . " Seq: " . $child->getSequence() . "<br>";
+                }
+            }
+            $index++;
+        }
+    }
 }
 
 abstract class ProjectHandler {
@@ -128,7 +142,7 @@ abstract class ProjectHandler {
         $blocks = ProjectHandler::createInstancesOfBlocks($blocksRaw);
         return $blocks;
     }
-    
+
     static function pushBlocksToArray($blocksData, &$blocks, $screen, $parent, $metadata = array(), $sequence = 1) {
         foreach ($blocksData as $block) {
             if (isset($block['@attributes'])) {
@@ -138,54 +152,54 @@ abstract class ProjectHandler {
                 $blocksObjToSave['sequence'] = $sequence;
                 $blocksObjToSave['parent'] = $parent;
                 $blocksObjToSave['metadata'] = $metadata;
-    
+
                 if (isset($block['mutation']['@attributes'])) {
                     $blocksObjToSave = array_merge($blocksObjToSave, $block['mutation']['@attributes']);
                 }
-    
+
                 if (isset($block['field'])) {
                     $blocksObjToSave['field'] = $block['field'];
                 }
-    
+
                 $blocks[] = $blocksObjToSave;
             }
-    
+
             if (isset($block['value'])) {
                 if (isset($block['value']['block'])) {
                     ProjectHandler::pushBlocksToArray($block['value'], $blocks, $screen, $actualBlockId, $block['value']['@attributes']);
                 } else if (is_array($block['value']) && isset($block['value'][0]['block'])) {
-                    for($index = 0; $index < count($block['value']); $index++) {
+                    for ($index = 0; $index < count($block['value']); $index++) {
                         ProjectHandler::pushBlocksToArray($block['value'][$index], $blocks, $screen, $actualBlockId, $block['value'][$index]['@attributes']);
                     }
                 }
             }
-    
+
             if (isset($block['statement'])) {
                 if (isset($block['statement']['block'])) {
                     ProjectHandler::pushBlocksToArray($block['statement'], $blocks, $screen, $actualBlockId, $block['statement']['@attributes']);
                 } else if (is_array($block['statement']) && isset($block['statement'][0]['block'])) {
-                    for($index = 0; $index < count($block['statement']); $index++) {
+                    for ($index = 0; $index < count($block['statement']); $index++) {
                         ProjectHandler::pushBlocksToArray($block['statement'][$index], $blocks, $screen, $actualBlockId, $block['statement'][$index]['@attributes']);
                     }
                 }
             }
-    
+
             if (isset($block['next']['block'])) {
                 ProjectHandler::pushBlocksToArray($block['next'], $blocks, $screen, $parent, array(), $sequence + 1);
             }
         }
     }
-    
+
     static function createInstancesOfBlocks($blocksRawData) {
         print_r($blocksRawData);
         $blocks = array();
-    
+
         //create instances
         foreach ($blocksRawData as $blockData) {
             $newBlock = ProjectHandler::createBlockByType($blockData);
             $blocks[] = $newBlock;
         }
-    
+
         //add paremt/child
         foreach ($blocksRawData as $blockRaw) {
             $blockChild = ProjectHandler::getBlockById($blocks, $blockRaw['id']);
@@ -195,30 +209,38 @@ abstract class ProjectHandler {
                 $blockChild->setParent($blockParent);
             }
         }
-    
+
         //add conditions to controls_if
         foreach ($blocks as $block) {
-            if(get_class($block) == BlockControlsIf::class) {
-                foreach($blocks as $searchedBlock) {
-                    if(($searchedBlock->getParent()) != null && ($searchedBlock->getParent()->getId() != $block->getId())) continue;
-                    if(!isset($searchedBlock->getMetadata()['name'])) continue;
-                    if($searchedBlock->getMetadata()['name'] == "IF0")
-                        $block->setIfCondition($searchedBlock);
-                    if($searchedBlock->getMetadata()['name'] == "IF1")
-                        $block->setElseifCondition($searchedBlock);
-                    if($searchedBlock->getMetadata()['name'] == "DO0")
-                        $block->setIfCode($searchedBlock);
-                    if($searchedBlock->getMetadata()['name'] == "DO1")
-                        $block->setElseifCode($searchedBlock);
-                    if($searchedBlock->getMetadata()['name'] == "ELSE")
-                        $block->setElseCode($searchedBlock);
+            if (get_class($block) !== BlockControlsIf::class) continue;
+            foreach ($blocks as $searchedBlock) {
+                if (($searchedBlock->getParent()) != null && ($searchedBlock->getParent()->getId() != $block->getId())) continue;
+                if (!isset($searchedBlock->getMetadata()['name'])) continue;
+                if ($searchedBlock->getMetadata()['name'] == "IF0") {
+                    $block->setIfCondition($searchedBlock);
+                    $block->removeChild($searchedBlock);
+                }
+                if ($searchedBlock->getMetadata()['name'] == "IF1") {
+                    $block->setElseifCondition($searchedBlock);
+                    $block->removeChild($searchedBlock);
                 }
             }
         }
-    
+
+        //sort and fix children of controls_if
+        foreach ($blocks as $blockControlsIf) {
+            if (get_class($blockControlsIf) !== BlockControlsIf::class) continue;
+            $cycle = 0;
+            $arrayDecider = [1 => 'if', 2 => 'elseif', 3 => 'else'];
+            foreach ($blockControlsIf->getChild() as $child) {
+                if ($child->getSequence() === 1) $cycle++;
+                $blockControlsIf->addCode($arrayDecider[$cycle], $child);
+            }
+        }
+
         return $blocks;
     }
-    
+
     static function getBlockById($blocks, $id): ?Block {
         if ($id == null) return null;
         foreach ($blocks as $block) {
@@ -228,13 +250,13 @@ abstract class ProjectHandler {
         }
         return null;
     }
-    
+
     static function createBlockByType($blockData): Block {
-    
+
         if (str_starts_with($blockData['type'], "color_")) {
             return new BlockColor($blockData);
         }
-    
+
         switch ($blockData['type']) {
             case "component_event":
                 return new BlockComponentEvent($blockData);
@@ -254,7 +276,7 @@ abstract class ProjectHandler {
                 return new Block($blockData);
         }
     }
-    
+
     static function processComponents($loadedProjectFiles) {
         $components = array();
         $screens = ProjectHandler::discoverScreens($loadedProjectFiles);
@@ -263,7 +285,7 @@ abstract class ProjectHandler {
         }
         return $components;
     }
-    
+
     static function discoverScreens($loadedProjectFiles) {
         $screens = array();
         foreach ($loadedProjectFiles['scm'] as $screenName => $screenData) {
@@ -271,7 +293,7 @@ abstract class ProjectHandler {
         }
         return $screens;
     }
-    
+
     static function pushComponentsToArray($componentsInProject, &$components, $screen) {
         foreach ($componentsInProject as $component) {
             $component['screen'] = $screen;
@@ -355,12 +377,12 @@ abstract class ProjectHandler {
             }
         }
     }
-    
+
     //Clear tmp folder
     static function clearTmp(): void {
         ProjectHandler::rrmdir('tmp');
     }
-    
+
     //Delete specific folder
     static function rrmdir($dir): void {
         if (is_dir($dir)) {
@@ -376,26 +398,26 @@ abstract class ProjectHandler {
             rmdir($dir);
         }
     }
-    
+
     //Lookup files by extension in specific folder
     static function searchFilesByExtension($dir, $extension): array {
         $fileList = [];
-    
+
         $iterator = new RecursiveIteratorIterator(
             new RecursiveDirectoryIterator($dir, RecursiveDirectoryIterator::SKIP_DOTS),
             RecursiveIteratorIterator::SELF_FIRST,
             RecursiveIteratorIterator::CATCH_GET_CHILD
         );
-    
+
         foreach ($iterator as $path => $fileInfo) {
             if ($fileInfo->isFile() && $fileInfo->getExtension() === $extension) {
                 $fileList[] = $path;
             }
         }
-    
+
         return $fileList;
     }
-    
+
     //Unzip specific project to selected folder
     static function unzipProject(String $filename, String $pathTo = './tmp'): void {
         ProjectHandler::clearTmp();
@@ -403,18 +425,18 @@ abstract class ProjectHandler {
         $zip->open($filename);
         $zip->extractTo($pathTo);
     }
-    
+
     static function loadProjectFiles(): array {
         $projectFiles = array();
         $projectFiles['scm'] = ProjectHandler::loadProjectFilesScm();
         $projectFiles['bky'] = ProjectHandler::loadProjectFilesBky();
         return $projectFiles;
     }
-    
+
     static function loadProjectFilesScm(): array {
-    
+
         $projectFiles = array();
-    
+
         $filesFound = ProjectHandler::searchFilesByExtension("./tmp", "scm");
         foreach ($filesFound as $file) {
             $handle = fopen($file, "r");
@@ -427,14 +449,14 @@ abstract class ProjectHandler {
             }
             $projectFiles[basename($file, ".scm")] = json_decode(ProjectHandler::extractJsonFromFileScm($readText), true);
         }
-    
+
         return $projectFiles;
     }
-    
+
     static function loadProjectFilesBky(): array {
-    
+
         $projectFiles = array();
-    
+
         $filesFound = ProjectHandler::searchFilesByExtension("./tmp", "bky");
         foreach ($filesFound as $file) {
             $handle = fopen($file, "r");
@@ -451,13 +473,12 @@ abstract class ProjectHandler {
             $arrayData = json_decode($jsonString, true);
             $projectFiles[basename($file, ".bky")] = $arrayData;
         }
-    
+
         return $projectFiles;
     }
-    
+
     static function extractJsonFromFileScm($text) {
         preg_match('/\{.*\}/s', $text, $extractedJsonText);
         return $extractedJsonText[0];
     }
-
 }

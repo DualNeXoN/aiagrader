@@ -700,7 +700,7 @@ class ComponentSpinner extends BaseComponent {
             $this->elements[] = $element;
         }
     }
-    
+
     public function removeElement($element): void {
         if (($key = array_search($element, $this->elements)) !== false) {
             unset($this->elements[$key]);
@@ -710,7 +710,7 @@ class ComponentSpinner extends BaseComponent {
             }
         }
     }
-    
+
 
     public function getSelection(): ?String {
         return $this->selection;

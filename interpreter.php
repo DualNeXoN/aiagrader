@@ -14,11 +14,9 @@ class Interpreter {
     }
 
     private function initialize() {
-        
     }
-    
-    private function interpret() {
 
+    private function interpret() {
     }
 
     public function getProject(): Project {
@@ -28,5 +26,4 @@ class Interpreter {
     public function setProject($project): void {
         $this->project = $project;
     }
-
 }

@@ -80,7 +80,7 @@ class Block {
 
     public function isStartingBlock(): bool {
         return $this->parent == null;
-    }    
+    }
 
     public function getMetadata(): array {
         return $this->metadata;
@@ -111,7 +111,6 @@ class BlockComponentEvent extends Block {
     public function getEventName(): String {
         return $this->eventName;
     }
-
 }
 
 class BlockComponentSetGet extends Block {
@@ -148,7 +147,6 @@ class BlockComponentSetGet extends Block {
     public function getInstanceName(): String {
         return $this->instanceName;
     }
-
 }
 
 class BlockText extends Block {
@@ -163,7 +161,6 @@ class BlockText extends Block {
     public function getField(): String {
         return $this->field;
     }
-
 }
 
 class BlockColor extends Block {
@@ -178,7 +175,6 @@ class BlockColor extends Block {
     public function getField(): String {
         return $this->field;
     }
-
 }
 
 class BlockMathNumber extends Block {
@@ -193,7 +189,6 @@ class BlockMathNumber extends Block {
     public function getField(): int {
         return $this->field;
     }
-
 }
 
 class BlockLogicBoolean extends Block {
@@ -208,7 +203,6 @@ class BlockLogicBoolean extends Block {
     public function getField(): bool {
         return $this->field;
     }
-
 }
 
 class BlockGlobalDeclaration extends Block {
@@ -223,16 +217,13 @@ class BlockGlobalDeclaration extends Block {
     public function getField() {
         return $this->field;
     }
-
 }
 
 class BlockControlsIf extends Block {
 
     protected ?Block $ifCondition = null;
-    protected ?Block $ifCode = null;
     protected ?Block $elseifCondition = null;
-    protected ?Block $elseifCode = null;
-    protected ?Block $elseCode = null;
+    protected array $code = ['if' => array(), 'elseif' => array(), 'else' => array()];
 
     protected bool $hasElseif;
     protected bool $hasElse;
@@ -255,20 +246,8 @@ class BlockControlsIf extends Block {
         return $this->ifCondition;
     }
 
-    public function getIfCode(): ?Block {
-        return $this->ifCode;
-    }
-
     public function getElseifCondition(): ?Block {
         return $this->elseifCondition;
-    }
-
-    public function getElseifCode(): ?Block {
-        return $this->elseifCode;
-    }
-
-    public function getElseCode(): ?Block {
-        return $this->elseCode;
     }
 
     public function setIfCondition(Block $block) {
@@ -279,16 +258,11 @@ class BlockControlsIf extends Block {
         $this->elseifCondition = $block;
     }
 
-    public function setIfCode(Block $block) {
-        $this->ifCode = $block;
+    public function addCode(String $conditionType, Block $block): void {
+        array_push($this->code[$conditionType], $block);
     }
 
-    public function setElseifCode(Block $block) {
-        $this->elseifCode = $block;
+    public function getCode(): array {
+        return $this->code;
     }
-
-    public function setElseCode(Block $block) {
-        $this->elseCode = $block;
-    }
-
 }
