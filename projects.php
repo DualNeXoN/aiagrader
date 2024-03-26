@@ -24,8 +24,8 @@ class Project {
     }
 
     public function getVariable($key): mixed {
-        if(!isset($this->variables[$key])) {
-            if(!str_starts_with($key, "global ")) {
+        if (!isset($this->variables[$key])) {
+            if (!str_starts_with($key, "global ")) {
                 $this->setVariable($key, 0);
             }
         }
@@ -56,6 +56,14 @@ class Project {
             $startingBlocks[] = $block;
         }
         return $startingBlocks;
+    }
+
+    public function getDefinedFunction($functionName): Block {
+        foreach ($this->blocks as $block) {
+            if ($block->getType() != "procedures_defnoreturn") continue;
+            if ($block->getField() == $functionName) return $block;
+        }
+        return null;
     }
 
     public function info(): void {
@@ -231,7 +239,6 @@ abstract class ProjectHandler {
     }
 
     static function createInstancesOfBlocks($blocksRawData) {
-        //print_r($blocksRawData);
         $blocks = array();
 
         //create instances
@@ -275,7 +282,7 @@ abstract class ProjectHandler {
             foreach ($blockControlsIf->getChild() as $child) {
                 if ($child->getSequence() === 1) {
                     $cycle++;
-                    if($cycle === 2 && !$blockControlsIf->hasElseif()) {
+                    if ($cycle === 2 && !$blockControlsIf->hasElseif()) {
                         $cycle++;
                     }
                 }
@@ -305,18 +312,38 @@ abstract class ProjectHandler {
         switch ($blockData['type']) {
             case "component_event":
                 return new BlockComponentEvent($blockData);
+            case "procedures_defnoreturn":
+                return new BlockProceduresDefnoreturn($blockData);
+            case "procedures_callnoreturn":
+                return new BlockProceduresCallnoreturn($blockData);
+            case "component_method":
+                return new BlockComponentMethod($blockData);
             case "component_set_get":
                 return new BlockComponentSetGet($blockData);
+            case "component_component_block":
+                return new BlockComponentComponentBlock($blockData);
             case "text":
                 return new BlockText($blockData);
+            case "text_join":
+                return new BlockTextJoin($blockData);
             case "math_number":
                 return new BlockMathNumber($blockData);
             case "math_add":
                 return new BlockMathAdd($blockData);
+            case "math_subtract":
+                return new BlockMathSubtract($blockData);
+            case "math_multiply":
+                return new BlockMathMultiply($blockData);
+            case "math_random_int":
+                return new BlockMathRandomInt($blockData);
             case "math_compare":
                 return new BlockMathCompare($blockData);
             case "logic_boolean":
                 return new BlockLogicBoolean($blockData);
+            case "logic_compare":
+                return new BlockLogicCompare($blockData);
+            case "logic_or":
+                return new BlockLogicOr($blockData);
             case "global_declaration":
                 return new BlockGlobalDeclaration($blockData);
             case "controls_if":
@@ -350,6 +377,7 @@ abstract class ProjectHandler {
     }
 
     static function pushComponentsToArray($componentsInProject, &$components, $screen) {
+        //print_r($componentsInProject);
         foreach ($componentsInProject as $component) {
             $component['screen'] = $screen;
             $instance = null;

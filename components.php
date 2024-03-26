@@ -135,6 +135,11 @@ class ComponentImageSprite extends BaseComponent {
         $this->properties['Y'] = intval($data['Y']);
         $this->properties['Enabled'] = !isset($data['Enabled']);
     }
+
+    public function MoveTo($x, $y) {
+        $this->setProperty("X", $x);
+        $this->setProperty("Y", $y);
+    }
 }
 
 class ComponentCanvas extends BaseComponent {
@@ -151,6 +156,10 @@ class ComponentNotifier extends BaseComponent {
     function __construct($data) {
         parent::__construct($data);
     }
+
+    /*public function ShowMessageDialog() {
+
+    }*/
 }
 
 class ComponentSound extends BaseComponent {

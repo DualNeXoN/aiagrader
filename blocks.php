@@ -136,6 +136,92 @@ class BlockComponentEvent extends Block {
     }
 }
 
+class BlockComponentMethod extends Block {
+
+    protected String $componentType;
+    protected String $methodName;
+    protected String $instanceName;
+
+    function __construct($data) {
+        parent::__construct($data);
+        $this->componentType = $data['component_type'];
+        $this->methodName = $data['method_name'];
+        $this->instanceName = $data['instance_name'];
+        $this->interpreterText = "Method <b>" . $this->methodName . "</b> of instance <b>" . $this->instanceName . "</b> fired<br>";
+    }
+
+    public function getComponentType(): String {
+        return $this->componentType;
+    }
+
+    public function getMethodName(): String {
+        return $this->methodName;
+    }
+
+    public function getInstanceName(): String {
+        return $this->instanceName;
+    }
+
+    public function evaluate() {
+        parent::evaluate();
+        $args = null;
+        foreach ($this->child as $child) {
+            $args[] = $child->evaluate();
+        }
+        $component = $this->project->getComponentByName($this->instanceName);
+        if (method_exists($component, $this->methodName)) {
+            call_user_func_array(array($component, $this->methodName), $args);
+        } else {
+            echo "<text style=\"color: yellow\">Unsupported method <b>" . $this->methodName . "</b> of component <b>" . $this->componentType . "</b></text><br>";
+        }
+    }
+}
+
+class BlockProceduresDefnoreturn extends Block {
+
+    protected String $field;
+
+    function __construct($data) {
+        parent::__construct($data);
+        $this->field = $data['field'];
+        $this->interpreterText = "Starting defined function <b>" . $this->field . "</b><br>";
+    }
+
+    public function getField(): String {
+        return $this->field;
+    }
+
+    public function evaluate() {
+        parent::evaluate();
+        foreach ($this->child as $child) {
+            $child->evaluate();
+        }
+    }
+}
+
+class BlockProceduresCallnoreturn extends Block {
+
+    protected String $field;
+
+    function __construct($data) {
+        parent::__construct($data);
+        $this->field = $data['field'];
+        $this->interpreterText = "Calling defined function <b>" . $this->field . "</b><br>";
+    }
+
+    public function getField(): String {
+        return $this->field;
+    }
+
+    public function evaluate() {
+        parent::evaluate();
+        $this->project->getDefinedFunction($this->field)->evaluate();
+        foreach ($this->child as $child) {
+            $child->evaluate();
+        }
+    }
+}
+
 class BlockComponentSetGet extends Block {
 
     protected String $componentType;
@@ -182,6 +268,29 @@ class BlockComponentSetGet extends Block {
     }
 }
 
+class BlockComponentComponentBlock extends Block {
+
+    protected String $field;
+
+    function __construct($data) {
+        parent::__construct($data);
+        $this->field = $data['field'];
+        $this->interpreterText = "<b>" . $this->field . "</b> (component instance)<br>";
+    }
+
+    public function getField(): String {
+        return $this->field;
+    }
+
+    public function evaluate() {
+        parent::evaluate();
+        foreach ($this->child as $child) {
+            $child->evaluate();
+        }
+        return $this->field;
+    }
+}
+
 class BlockText extends Block {
 
     protected String $field;
@@ -202,6 +311,19 @@ class BlockText extends Block {
             $child->evaluate();
         }
         return $this->field;
+    }
+}
+
+class BlockTextJoin extends Block {
+
+    function __construct($data) {
+        parent::__construct($data);
+        $this->interpreterText = "Joining text<br>";
+    }
+
+    public function evaluate() {
+        parent::evaluate();
+        return $this->child[0]->evaluate() . $this->child[1]->evaluate();
     }
 }
 
@@ -255,12 +377,40 @@ class BlockMathAdd extends Block {
 
     function __construct($data) {
         parent::__construct($data);
+        $this->interpreterText = "<b>Math addition</b>:<br>";
     }
 
     public function evaluate(): int {
-        $this->interpreterText = "<b>" . $this->child[0]->getField() . " + " . $this->child[1]->getField() . "</b><br>";
         parent::evaluate();
         $result = $this->child[0]->evaluate() + $this->child[1]->evaluate();
+        return $result;
+    }
+}
+
+class BlockMathSubtract extends Block {
+
+    function __construct($data) {
+        parent::__construct($data);
+        $this->interpreterText = "<b>Math subtract</b>:<br>";
+    }
+
+    public function evaluate(): int {
+        parent::evaluate();
+        $result = $this->child[0]->evaluate() - $this->child[1]->evaluate();
+        return $result;
+    }
+}
+
+class BlockMathMultiply extends Block {
+
+    function __construct($data) {
+        parent::__construct($data);
+        $this->interpreterText = "<b>Math multiply</b>:<br>";
+    }
+
+    public function evaluate(): int {
+        parent::evaluate();
+        $result = $this->child[0]->evaluate() * $this->child[1]->evaluate();
         return $result;
     }
 }
@@ -268,7 +418,7 @@ class BlockMathAdd extends Block {
 class BlockMathCompare extends Block {
 
     protected String $field;
-    protected array $map = ['GT' => '>', 'LT' => '<'];
+    protected array $map = ['GT' => '>', 'LT' => '<', 'EQ' => '='];
 
     function __construct($data) {
         parent::__construct($data);
@@ -286,7 +436,25 @@ class BlockMathCompare extends Block {
             case '<':
                 $result = $this->child[0]->evaluate() < $this->child[1]->evaluate();
                 break;
+            case '=':
+                $result = $this->child[0]->evaluate() == $this->child[1]->evaluate();
+                break;
         }
+        return $result;
+    }
+}
+
+class BlockMathRandomInt extends Block {
+
+    function __construct($data) {
+        parent::__construct($data);
+        $this->interpreterText = "<b>Random int</b>:<br>";
+    }
+
+    public function evaluate(): int {
+        parent::evaluate();
+        $result = random_int($this->child[0]->evaluate(), $this->child[1]->evaluate());
+        echo "Generated number: <b>" . $result . "</b><br>";
         return $result;
     }
 }
@@ -323,9 +491,46 @@ class BlockLogicNegate extends Block {
 
     public function evaluate() {
         parent::evaluate();
-        foreach ($this->child as $child) {
-            $child->evaluate();
+        return !$this->child[0]->evaluate();
+    }
+}
+
+class BlockLogicOr extends Block {
+
+    function __construct($data) {
+        parent::__construct($data);
+        $this->interpreterText = "<b>||</b><br>";
+    }
+
+    public function evaluate() {
+        parent::evaluate();
+        return $this->child[0]->evaluate() || $this->child[1]->evaluate();
+    }
+}
+
+class BlockLogicCompare extends Block {
+
+    protected String $field;
+    protected array $map = ['EQ' => '=', 'NEQ' => '!='];
+
+    function __construct($data) {
+        parent::__construct($data);
+        $this->field = $data['field'];
+        $this->interpreterText = "Comparing <b>" . $this->map[$this->field] . "</b><br>";
+    }
+
+    public function evaluate(): bool {
+        parent::evaluate();
+        $result = false;
+        switch ($this->map[$this->field]) {
+            case '=':
+                $result = $this->child[0]->evaluate() == $this->child[1]->evaluate();
+                break;
+            case '!=':
+                $result = $this->child[0]->evaluate() != $this->child[1]->evaluate();
+                break;
         }
+        return $result;
     }
 }
 

@@ -9,19 +9,21 @@ class Interpreter {
     }
 
     public function run() {
-        $this->initialize();
+        $count = 0;
+        $this->initialize($count);
         //$this->interpretBasedOnRules();
-        $this->interpretAll();
+        $this->interpretAll($count);
     }
 
-    private function initialize() {
+    private function initialize(&$count) {
         echo "<h2>Evaluating blocks for initialization</h2>";
 
         //global declarations
         foreach ($this->project->getStartingBlocks() as $startingBlock) {
-            if($startingBlock->getType() === "global_declaration") {
+            if ($startingBlock->getType() === "global_declaration") {
                 try {
-                    echo "<h2>Block</h2>";
+                    $count++;
+                    echo "<h2>Block [" . $count . "]</h2>";
                     $startingBlock->evaluate();
                 } catch (Exception $e) {
                 }
@@ -30,9 +32,10 @@ class Interpreter {
 
         //events for initialization
         foreach ($this->project->getStartingBlocks() as $startingBlock) {
-            if($startingBlock->getType() === "component_event" && $startingBlock->getEventName() === "Initialize") {
+            if ($startingBlock->getType() === "component_event" && $startingBlock->getEventName() === "Initialize") {
                 try {
-                    echo "<h2>Block</h2>";
+                    $count++;
+                    echo "<h2>Block [" . $count . "]</h2>";
                     $startingBlock->evaluate();
                 } catch (Exception $e) {
                 }
@@ -43,13 +46,14 @@ class Interpreter {
     private function interpretBasedOnRules() {
     }
 
-    private function interpretAll() {
+    private function interpretAll($count) {
         echo "<h2>Evaluating event blocks based on rules</h2>";
         foreach ($this->project->getStartingBlocks() as $startingBlock) {
-            if($startingBlock->getType() === "global_declaration") continue;
-            if($startingBlock->getType() === "component_event" && $startingBlock->getEventName() === "Initialize") continue;
+            if ($startingBlock->getType() === "global_declaration") continue;
+            if ($startingBlock->getType() === "component_event" && $startingBlock->getEventName() === "Initialize") continue;
             try {
-                echo "<h2>Block</h2>";
+                $count++;
+                echo "<h2>Block [" . $count . "]</h2>";
                 $startingBlock->evaluate();
             } catch (Exception $e) {
             }
