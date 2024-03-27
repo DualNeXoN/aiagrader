@@ -305,10 +305,6 @@ abstract class ProjectHandler {
 
     static function createBlockByType($blockData): Block {
 
-        if (str_starts_with($blockData['type'], "color_")) {
-            return new BlockColor($blockData);
-        }
-
         switch ($blockData['type']) {
             case "component_event":
                 return new BlockComponentEvent($blockData);
@@ -330,6 +326,22 @@ abstract class ProjectHandler {
                 return new BlockText($blockData);
             case "text_join":
                 return new BlockTextJoin($blockData);
+            case "text_length":
+                return new BlockTextLength($blockData);
+            case "text_compare":
+                return new BlockTextCompare($blockData);
+            case "text_starts_at":
+                return new BlockTextStartsAt($blockData);
+            case "text_contains":
+                return new BlockTextContains($blockData);
+            case "text_replace_all":
+                return new BlockTextReplaceAll($blockData);
+            case "text_reverse":
+                return new BlockTextReverse($blockData);
+            case "text_changeCase":
+                return new BlockTextChangeCase($blockData);
+            case "text_isEmpty":
+                return new BlockTextIsEmpty($blockData);
             case "math_number":
                 return new BlockMathNumber($blockData);
             case "math_add":
@@ -388,9 +400,13 @@ abstract class ProjectHandler {
                 return new BlockLexicalVariableSet($blockData);
             case "lexical_variable_get":
                 return new BlockLexicalVariableGet($blockData);
-            default:
-                return new Block($blockData);
         }
+
+        if (str_starts_with($blockData['type'], "color_")) {
+            return new BlockColor($blockData);
+        }
+
+        return new Block($blockData);
     }
 
     static function processComponents($loadedProjectFiles) {

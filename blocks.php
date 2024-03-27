@@ -334,7 +334,7 @@ class BlockText extends Block {
 
     function __construct($data) {
         parent::__construct($data);
-        $this->field = $data['field'];
+        $this->field = (!is_array($data['field']) ? $data['field'] : "");
         $this->interpreterText = "<b>" . $this->field . "</b> (text)<br>";
     }
 
@@ -361,6 +361,142 @@ class BlockTextJoin extends Block {
     public function evaluate() {
         parent::evaluate();
         return $this->child[0]->evaluate() . $this->child[1]->evaluate();
+    }
+}
+
+class BlockTextLength extends Block {
+
+    function __construct($data) {
+        parent::__construct($data);
+        $this->interpreterText = "Text length<br>";
+    }
+
+    public function evaluate() {
+        parent::evaluate();
+        return strlen($this->child[0]->evaluate());
+    }
+}
+
+class BlockTextStartsAt extends Block {
+
+    function __construct($data) {
+        parent::__construct($data);
+        $this->interpreterText = "Text starts at<br>";
+    }
+
+    public function evaluate() {
+        parent::evaluate();
+        $position = strpos($this->child[0]->evaluate(), $this->child[1]->evaluate());
+        if ($position === false) {
+            $position = 0;
+        } else {
+            $position += 1;
+        }
+
+        return $position;
+    }
+}
+
+class BlockTextContains extends Block {
+
+    protected String $field;
+
+    function __construct($data) {
+        parent::__construct($data);
+        $this->field = $data['field'];
+        $this->interpreterText = "Text contains<br>";
+    }
+
+    public function evaluate() {
+        parent::evaluate();
+        if($this->field == "CONTAINS") return str_contains($this->child[0]->evaluate(), $this->child[1]->evaluate());
+        echo "<div style=\"color:yellow\">BlockTextContains unimplemented mode (" . $this->field . "). Returning false</div>";
+        return false;
+    }
+}
+
+class BlockTextReplaceAll extends Block {
+
+    protected String $field;
+
+    function __construct($data) {
+        parent::__construct($data);
+        $this->interpreterText = "Text replace all<br>";
+    }
+
+    public function evaluate() {
+        parent::evaluate();
+        return str_replace($this->child[1]->evaluate(), $this->child[2]->evaluate(), $this->child[0]->evaluate());
+    }
+}
+
+class BlockTextReverse extends Block {
+
+    function __construct($data) {
+        parent::__construct($data);
+        $this->interpreterText = "Text reverse<br>";
+    }
+
+    public function evaluate() {
+        parent::evaluate();
+        return strrev($this->child[0]->evaluate());
+    }
+}
+
+class BlockTextChangeCase extends Block {
+
+    protected String $field;
+
+    function __construct($data) {
+        parent::__construct($data);
+        $this->field = $data['field'];
+        $this->interpreterText = "Text change case to " . $this->field . "<br>";
+    }
+
+    public function evaluate() {
+        parent::evaluate();
+        if ($this->field == "UPCASE") return strtoupper($this->child[0]->evaluate());
+        else return strtolower($this->child[0]->evaluate());
+    }
+}
+
+class BlockTextCompare extends Block {
+
+    protected String $field;
+    protected array $map = ['GT' => '>', 'LT' => '<', 'EQUAL' => '=', 'NEQ' => '!='];
+
+    function __construct($data) {
+        parent::__construct($data);
+        $this->field = $data['field'];
+        $this->interpreterText = "Text compare " . $this->field . "<br>";
+    }
+
+    public function evaluate(): int {
+        parent::evaluate();
+        switch ($this->map[$this->field]) {
+            case '<':
+                return strnatcmp($this->child[0]->evaluate(), $this->child[1]->evaluate()) == -1;
+            case '>':
+                return strnatcmp($this->child[0]->evaluate(), $this->child[1]->evaluate()) == 1;
+            case '=':
+                return strnatcmp($this->child[0]->evaluate(), $this->child[1]->evaluate()) == 0;
+            case '!=':
+                return strnatcmp($this->child[0]->evaluate(), $this->child[1]->evaluate()) != 0;
+        }
+        return false;
+    }
+}
+
+class BlockTextIsEmpty extends Block {
+
+    function __construct($data) {
+        parent::__construct($data);
+        $this->interpreterText = "Is text empty?<br>";
+    }
+
+    public function evaluate() {
+        parent::evaluate();
+        return empty($this->child[0]->evaluate());
     }
 }
 
@@ -476,19 +612,15 @@ class BlockMathBitwise extends Block {
 
     public function evaluate(): int {
         parent::evaluate();
-        $result = false;
         switch ($this->map[$this->field]) {
             case '&':
-                $result = $this->child[0]->evaluate() & $this->child[1]->evaluate();
-                break;
+                return $this->child[0]->evaluate() & $this->child[1]->evaluate();
             case '|':
-                $result = $this->child[0]->evaluate() | $this->child[1]->evaluate();
-                break;
+                return $this->child[0]->evaluate() | $this->child[1]->evaluate();
             case '^':
-                $result = $this->child[0]->evaluate() ^ $this->child[1]->evaluate();
-                break;
+                return $this->child[0]->evaluate() ^ $this->child[1]->evaluate();
         }
-        return $result;
+        return null;
     }
 }
 
@@ -635,7 +767,6 @@ class BlockMathIsNumber extends Block {
                 return preg_match('/^[0-9a-fA-F]+$/', $this->child[0]->evaluate()) === 1;
             case 'BINARY':
                 return preg_match('/^[01]+$/', $this->child[0]->evaluate()) === 1;
-
         }
         return false;
     }
