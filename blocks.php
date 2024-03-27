@@ -352,11 +352,11 @@ class BlockColor extends Block {
 
 class BlockMathNumber extends Block {
 
-    protected int $field;
+    protected mixed $field;
 
     function __construct($data) {
         parent::__construct($data);
-        $this->field = intval($data['field']);
+        $this->field = $data['field'];
         $this->interpreterText = "<b>" . $this->field . "</b> (number)<br>";
     }
 
@@ -364,11 +364,8 @@ class BlockMathNumber extends Block {
         return $this->field;
     }
 
-    public function evaluate(): int {
+    public function evaluate(): mixed {
         parent::evaluate();
-        foreach ($this->child as $child) {
-            $child->evaluate();
-        }
         return $this->field;
     }
 }
@@ -415,10 +412,53 @@ class BlockMathMultiply extends Block {
     }
 }
 
+class BlockMathPower extends Block {
+
+    function __construct($data) {
+        parent::__construct($data);
+        $this->interpreterText = "<b>Math power</b>:<br>";
+    }
+
+    public function evaluate(): int {
+        parent::evaluate();
+        $result = pow($this->child[0]->evaluate(), $this->child[1]->evaluate());
+        return $result;
+    }
+}
+
+class BlockMathBitwise extends Block {
+
+    protected String $field;
+    protected array $map = ['BITAND' => '&', 'BITIOR' => '|', 'BITXOR' => '^'];
+
+    function __construct($data) {
+        parent::__construct($data);
+        $this->field = $data['field'];
+        $this->interpreterText = "Math bitwise <b>" . $this->map[$this->field] . "</b><br>";
+    }
+
+    public function evaluate(): int {
+        parent::evaluate();
+        $result = false;
+        switch ($this->map[$this->field]) {
+            case '&':
+                $result = $this->child[0]->evaluate() & $this->child[1]->evaluate();
+                break;
+            case '|':
+                $result = $this->child[0]->evaluate() | $this->child[1]->evaluate();
+                break;
+            case '^':
+                $result = $this->child[0]->evaluate() ^ $this->child[1]->evaluate();
+                break;
+        }
+        return $result;
+    }
+}
+
 class BlockMathCompare extends Block {
 
     protected String $field;
-    protected array $map = ['GT' => '>', 'LT' => '<', 'EQ' => '='];
+    protected array $map = ['GT' => '>', 'LT' => '<', 'LTE' => '<=', 'GTE' => '>=', 'EQ' => '=', 'NEQ' => '!='];
 
     function __construct($data) {
         parent::__construct($data);
@@ -439,8 +479,257 @@ class BlockMathCompare extends Block {
             case '=':
                 $result = $this->child[0]->evaluate() == $this->child[1]->evaluate();
                 break;
+            case '!=':
+                $result = $this->child[0]->evaluate() != $this->child[1]->evaluate();
+                break;
+            case '<=':
+                $result = $this->child[0]->evaluate() <= $this->child[1]->evaluate();
+                break;
+            case '>=':
+                $result = $this->child[0]->evaluate() >= $this->child[1]->evaluate();
+                break;
         }
         return $result;
+    }
+}
+
+class BlockMathSingle extends Block {
+
+    protected String $field;
+
+    function __construct($data) {
+        parent::__construct($data);
+        $this->field = $data['field'];
+        $this->interpreterText = $this->field . "<br>";
+    }
+
+    public function evaluate(): mixed {
+        parent::evaluate();
+        switch ($this->field) {
+            case 'ROOT':
+                return sqrt($this->child[0]->evaluate());
+            case 'ABS':
+                return abs($this->child[0]->evaluate());
+            case 'NEG':
+                return -$this->child[0]->evaluate();
+            case 'LN':
+                return log($this->child[0]->evaluate());
+            case 'EXP':
+                return exp($this->child[0]->evaluate());
+            case 'ROUND':
+                return round($this->child[0]->evaluate());
+            case 'CEILING':
+                return ceil($this->child[0]->evaluate());
+            case 'FLOOR':
+                return floor($this->child[0]->evaluate());
+        }
+        return null;
+    }
+}
+
+class BlockMathDivision extends Block {
+
+    function __construct($data) {
+        parent::__construct($data);
+        $this->interpreterText =  "Math division:<br>";
+    }
+
+    public function evaluate(): mixed {
+        parent::evaluate();
+        return $this->child[0]->evaluate() / $this->child[1]->evaluate();
+    }
+}
+
+class BlockMathDivide extends Block {
+
+    protected String $field;
+
+    function __construct($data) {
+        parent::__construct($data);
+        $this->field = $data['field'];
+        $this->interpreterText = $this->field . "<br>";
+    }
+
+    public function evaluate(): mixed {
+        parent::evaluate();
+        switch ($this->field) {
+            case 'MODULO':
+            case 'REMAINDER':
+                return $this->child[0]->evaluate() % $this->child[1]->evaluate();
+            case 'QUOTIENT':
+                return intdiv($this->child[0]->evaluate(), $this->child[1]->evaluate());
+        }
+        return null;
+    }
+}
+
+class BlockMathConvertAngles extends Block {
+
+    protected String $field;
+
+    function __construct($data) {
+        parent::__construct($data);
+        $this->field = $data['field'];
+        $this->interpreterText = $this->field . "<br>";
+    }
+
+    public function evaluate(): mixed {
+        parent::evaluate();
+        switch ($this->field) {
+            case 'RADIANS_TO_DEGREES':
+                return rad2deg($this->child[0]->evaluate());
+            case 'DEGREES_TO_RADIANS':
+                return deg2rad($this->child[0]->evaluate());
+        }
+        return null;
+    }
+}
+
+class BlockMathIsNumber extends Block {
+
+    protected String $field;
+
+    function __construct($data) {
+        parent::__construct($data);
+        $this->field = $data['field'];
+        $this->interpreterText =  "Is " . $this->field . "?<br>";
+    }
+
+    public function evaluate(): bool {
+        parent::evaluate();
+        switch ($this->field) {
+            case 'NUMBER':
+            case 'BASE10':
+                return is_numeric($this->child[0]->evaluate());
+            case 'HEXADECIMAL':
+                return preg_match('/^[0-9a-fA-F]+$/', $this->child[0]->evaluate()) === 1;
+            case 'BINARY':
+                return preg_match('/^[01]+$/', $this->child[0]->evaluate()) === 1;
+
+        }
+        return false;
+    }
+}
+
+class BlockMathConvertNumber extends Block {
+
+    protected String $field;
+
+    function __construct($data) {
+        parent::__construct($data);
+        $this->field = $data['field'];
+        $this->interpreterText =  $this->field . "<br>";
+    }
+
+    public function evaluate(): mixed {
+        parent::evaluate();
+        switch ($this->field) {
+            case 'DEC_TO_HEX':
+                return dechex($this->child[0]->evaluate());
+            case 'HEX_TO_DEC':
+                return hexdec($this->child[0]->evaluate());
+            case 'DEC_TO_BIN':
+                return decbin($this->child[0]->evaluate());
+            case 'BIN_TO_DEC':
+                return bindec($this->child[0]->evaluate());
+        }
+        return null;
+    }
+}
+
+class BlockMathNumberRadix extends Block {
+
+    protected String $fieldType;
+    protected String $field;
+
+    function __construct($data) {
+        parent::__construct($data);
+        $this->fieldType = $data['field'][0];
+        $this->field = $data['field'][1];
+        $this->interpreterText =  $this->field . " (" . $this->fieldType . ")<br>";
+    }
+
+    public function evaluate(): mixed {
+        parent::evaluate();
+        return $this->field;
+    }
+}
+
+class BlockMathFormatAsDecimal extends Block {
+
+    function __construct($data) {
+        parent::__construct($data);
+        $this->interpreterText =  "Format as decimal:<br>";
+    }
+
+    public function evaluate(): mixed {
+        parent::evaluate();
+        return number_format($this->child[0]->evaluate(), $this->child[1]->evaluate(), '.', '');;
+    }
+}
+
+class BlockMathAtan2 extends Block {
+
+    function __construct($data) {
+        parent::__construct($data);
+        $this->interpreterText = "ATAN2<br>";
+    }
+
+    public function evaluate(): mixed {
+        parent::evaluate();
+        return atan2($this->child[0]->evaluate(), $this->child[1]->evaluate());
+    }
+}
+
+class BlockMathTrig extends Block {
+
+    protected String $field;
+
+    function __construct($data) {
+        parent::__construct($data);
+        $this->field = $data['field'];
+        $this->interpreterText = $this->field . "<br>";
+    }
+
+    public function evaluate(): mixed {
+        parent::evaluate();
+        switch ($this->field) {
+            case 'SIN':
+                return sin($this->child[0]->evaluate());
+            case 'COS':
+                return cos($this->child[0]->evaluate());
+            case 'TAN':
+                return tan($this->child[0]->evaluate());
+            case 'ASIN':
+                return asin($this->child[0]->evaluate());
+            case 'ACOS':
+                return acos($this->child[0]->evaluate());
+            case 'ATAN':
+                return atan($this->child[0]->evaluate());
+        }
+        return null;
+    }
+}
+
+class BlockMathOnList extends Block {
+
+    protected String $field;
+
+    function __construct($data) {
+        parent::__construct($data);
+        $this->field = $data['field'];
+        $this->interpreterText = $this->field . "<br>";
+    }
+
+    public function evaluate(): mixed {
+        parent::evaluate();
+        switch ($this->field) {
+            case 'MIN':
+                return min($this->child[0]->evaluate(), $this->child[1]->evaluate());
+            case 'MAX':
+                return max($this->child[0]->evaluate(), $this->child[1]->evaluate());
+        }
+        return null;
     }
 }
 
@@ -454,6 +743,21 @@ class BlockMathRandomInt extends Block {
     public function evaluate(): int {
         parent::evaluate();
         $result = random_int($this->child[0]->evaluate(), $this->child[1]->evaluate());
+        echo "Generated number: <b>" . $result . "</b><br>";
+        return $result;
+    }
+}
+
+class BlockMathRandomFloat extends Block {
+
+    function __construct($data) {
+        parent::__construct($data);
+        $this->interpreterText = "<b>Random float</b>:<br>";
+    }
+
+    public function evaluate(): float {
+        parent::evaluate();
+        $result = mt_rand() / mt_getrandmax();
         echo "Generated number: <b>" . $result . "</b><br>";
         return $result;
     }

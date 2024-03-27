@@ -186,7 +186,7 @@ abstract class ProjectHandler {
                 ProjectHandler::pushBlocksToArray($screenData['block'], $blocksRaw, $screenName, null);
             }
         }
-        //print_r($blocksRaw);
+        print_r($blocksRaw);
         $blocks = ProjectHandler::createInstancesOfBlocks($blocksRaw);
         return $blocks;
     }
@@ -334,8 +334,36 @@ abstract class ProjectHandler {
                 return new BlockMathSubtract($blockData);
             case "math_multiply":
                 return new BlockMathMultiply($blockData);
+            case "math_division":
+                return new BlockMathDivision($blockData);
+            case "math_is_a_number":
+                return new BlockMathIsNumber($blockData);
+            case "math_convert_number":
+                return new BlockMathConvertNumber($blockData);
+            case "math_number_radix":
+                return new BlockMathNumberRadix($blockData);
+            case "math_format_as_decimal":
+                return new BlockMathFormatAsDecimal($blockData);
+            case "math_convert_angles":
+                return new BlockMathConvertAngles($blockData);
+            case "math_atan2":
+                return new BlockMathAtan2($blockData);
+            case "math_trig":
+                return new BlockMathTrig($blockData);
+            case "math_divide":
+                return new BlockMathDivide($blockData);
+            case "math_power":
+                return new BlockMathPower($blockData);
+            case "math_bitwise":
+                return new BlockMathBitwise($blockData);
             case "math_random_int":
                 return new BlockMathRandomInt($blockData);
+            case "math_random_float":
+                return new BlockMathRandomFloat($blockData);
+            case "math_on_list":
+                return new BlockMathOnList($blockData);
+            case "math_single":
+                return new BlockMathSingle($blockData);
             case "math_compare":
                 return new BlockMathCompare($blockData);
             case "logic_boolean":
