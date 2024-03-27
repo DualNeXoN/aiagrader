@@ -2,6 +2,7 @@
 
 class Project {
 
+    private ?Interpreter $interpreter = null;
     private ?String $projectName;
     private array $components;
     private array $blocks;
@@ -12,7 +13,7 @@ class Project {
         $this->components = $components;
         $this->blocks = $blocks;
         $this->variables = $variables;
-        $this->addProjectReferenceToBlocks();
+        $this->addProjectReferenceToChildren();
     }
 
     public function getComponents(): array {
@@ -42,9 +43,12 @@ class Project {
         $this->variables = array_values($this->variables);
     }
 
-    private function addProjectReferenceToBlocks(): void {
+    private function addProjectReferenceToChildren(): void {
         foreach ($this->blocks as $block) {
             $block->setProject($this);
+        }
+        foreach ($this->components as $component) {
+            $component->setProject($this);
         }
     }
 
@@ -70,6 +74,14 @@ class Project {
             if ($block->getField() == $functionName) return $block;
         }
         return null;
+    }
+
+    public function getInterpreter(): Interpreter {
+        return $this->interpreter;
+    }
+
+    public function setInterpreter($interpreter): void {
+        $this->interpreter = $interpreter;
     }
 
     public function info(): void {
@@ -400,6 +412,10 @@ abstract class ProjectHandler {
                 return new BlockGlobalDeclaration($blockData);
             case "controls_if":
                 return new BlockControlsIf($blockData);
+            case "controls_forRange":
+                return new BlockControlsForRange($blockData);
+            case "controls_do_then_return":
+                return new BlockControlsDoThenReturn($blockData);
             case "logic_negate":
                 return new BlockLogicNegate($blockData);
             case "lexical_variable_set":

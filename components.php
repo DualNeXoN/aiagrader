@@ -2,6 +2,7 @@
 
 class BaseComponent {
 
+    protected ?Project $project = null;
     protected String $name;
     protected String $type;
     protected String $version;
@@ -48,6 +49,14 @@ class BaseComponent {
 
     public function getProperties(): array {
         return $this->properties;
+    }
+
+    public function getProject(): Project {
+        return $this->project;
+    }
+
+    public function setProject($project): void {
+        $this->project = $project;
     }
 }
 

@@ -9,6 +9,7 @@ class Interpreter {
     }
 
     public function run() {
+        $this->project->setInterpreter($this);
         $count = 0;
         $this->initialize($count);
         //$this->interpretBasedOnRules();
