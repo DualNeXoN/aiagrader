@@ -199,6 +199,26 @@ class BlockProceduresDefnoreturn extends Block {
     }
 }
 
+class BlockProceduresDefreturn extends Block {
+
+    protected String $field;
+
+    function __construct($data) {
+        parent::__construct($data);
+        $this->field = $data['field'];
+        $this->interpreterText = "Starting defined function <b>" . $this->field . "</b><br>";
+    }
+
+    public function getField(): String {
+        return $this->field;
+    }
+
+    public function evaluate(): mixed {
+        parent::evaluate();
+        return $this->child[0]->evaluate();
+    }
+}
+
 class BlockProceduresCallnoreturn extends Block {
 
     protected String $field;
@@ -215,10 +235,27 @@ class BlockProceduresCallnoreturn extends Block {
 
     public function evaluate() {
         parent::evaluate();
-        $this->project->getDefinedFunction($this->field)->evaluate();
-        foreach ($this->child as $child) {
-            $child->evaluate();
-        }
+        return $this->project->getDefinedFunction($this->field)->evaluate();
+    }
+}
+
+class BlockProceduresCallreturn extends Block {
+
+    protected String $field;
+
+    function __construct($data) {
+        parent::__construct($data);
+        $this->field = $data['field'];
+        $this->interpreterText = "Calling defined function <b>" . $this->field . "</b><br>";
+    }
+
+    public function getField(): String {
+        return $this->field;
+    }
+
+    public function evaluate() {
+        parent::evaluate();
+        return $this->project->getDefinedFunction($this->field)->evaluate();
     }
 }
 
@@ -468,28 +505,21 @@ class BlockMathCompare extends Block {
 
     public function evaluate(): bool {
         parent::evaluate();
-        $result = false;
         switch ($this->map[$this->field]) {
             case '>':
-                $result = $this->child[0]->evaluate() > $this->child[1]->evaluate();
-                break;
+                return $this->child[0]->evaluate() > $this->child[1]->evaluate();
             case '<':
-                $result = $this->child[0]->evaluate() < $this->child[1]->evaluate();
-                break;
+                return $this->child[0]->evaluate() < $this->child[1]->evaluate();
             case '=':
-                $result = $this->child[0]->evaluate() == $this->child[1]->evaluate();
-                break;
+                return $this->child[0]->evaluate() == $this->child[1]->evaluate();
             case '!=':
-                $result = $this->child[0]->evaluate() != $this->child[1]->evaluate();
-                break;
+                return $this->child[0]->evaluate() != $this->child[1]->evaluate();
             case '<=':
-                $result = $this->child[0]->evaluate() <= $this->child[1]->evaluate();
-                break;
+                return $this->child[0]->evaluate() <= $this->child[1]->evaluate();
             case '>=':
-                $result = $this->child[0]->evaluate() >= $this->child[1]->evaluate();
-                break;
+                return $this->child[0]->evaluate() >= $this->child[1]->evaluate();
         }
-        return $result;
+        return false;
     }
 }
 
@@ -769,7 +799,7 @@ class BlockLogicBoolean extends Block {
 
     function __construct($data) {
         parent::__construct($data);
-        $this->field = boolval($data['field']);
+        $this->field = ($data['field'] == "FALSE" ? false : true);
         $this->interpreterText = "<b>" . $this->field . "</b> (bool)<br>";
     }
 
@@ -779,9 +809,26 @@ class BlockLogicBoolean extends Block {
 
     public function evaluate() {
         parent::evaluate();
-        foreach ($this->child as $child) {
-            $child->evaluate();
-        }
+        return $this->field;
+    }
+}
+
+class BlockLogicFalse extends Block {
+
+    protected bool $field;
+
+    function __construct($data) {
+        parent::__construct($data);
+        $this->field = ($data['field'] == "FALSE" ? false : true);
+        $this->interpreterText = "<b>" . $this->field . "</b> (bool)<br>";
+    }
+
+    public function getField(): bool {
+        return $this->field;
+    }
+
+    public function evaluate(): bool {
+        parent::evaluate();
         return $this->field;
     }
 }
@@ -825,16 +872,13 @@ class BlockLogicCompare extends Block {
 
     public function evaluate(): bool {
         parent::evaluate();
-        $result = false;
         switch ($this->map[$this->field]) {
             case '=':
-                $result = $this->child[0]->evaluate() == $this->child[1]->evaluate();
-                break;
+                return $this->child[0]->evaluate() == $this->child[1]->evaluate();
             case '!=':
-                $result = $this->child[0]->evaluate() != $this->child[1]->evaluate();
-                break;
+                return $this->child[0]->evaluate() != $this->child[1]->evaluate();
         }
-        return $result;
+        return false;
     }
 }
 

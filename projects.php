@@ -60,7 +60,7 @@ class Project {
 
     public function getDefinedFunction($functionName): Block {
         foreach ($this->blocks as $block) {
-            if ($block->getType() != "procedures_defnoreturn") continue;
+            if ($block->getType() != "procedures_defnoreturn" && $block->getType() != "procedures_defreturn") continue;
             if ($block->getField() == $functionName) return $block;
         }
         return null;
@@ -314,8 +314,12 @@ abstract class ProjectHandler {
                 return new BlockComponentEvent($blockData);
             case "procedures_defnoreturn":
                 return new BlockProceduresDefnoreturn($blockData);
+            case "procedures_defreturn":
+                return new BlockProceduresDefreturn($blockData);
             case "procedures_callnoreturn":
                 return new BlockProceduresCallnoreturn($blockData);
+            case "procedures_callreturn":
+                return new BlockProceduresCallreturn($blockData);
             case "component_method":
                 return new BlockComponentMethod($blockData);
             case "component_set_get":
@@ -368,6 +372,8 @@ abstract class ProjectHandler {
                 return new BlockMathCompare($blockData);
             case "logic_boolean":
                 return new BlockLogicBoolean($blockData);
+            case "logic_false":
+                return new BlockLogicFalse($blockData);
             case "logic_compare":
                 return new BlockLogicCompare($blockData);
             case "logic_or":

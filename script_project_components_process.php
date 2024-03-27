@@ -8,7 +8,7 @@ require_once "interpreter.php";
 echo "<h1>PROJECTS FOUND</h1>";
 $discoveredAiaProjects = ProjectHandler::discoverAiaProjects();
 print_r($discoveredAiaProjects);
-$project = ProjectHandler::loadProject($discoveredAiaProjects[0]);
+$project = ProjectHandler::loadProject($discoveredAiaProjects[7]);
 //$project->info();
 $interpreter = new Interpreter($project);
 $interpreter->run();
