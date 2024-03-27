@@ -36,6 +36,12 @@ class Project {
         $this->variables[$key] = $value;
     }
 
+    public function removeVariable(String $key): void {
+        if(!isset($this->variables[$key])) return;
+        unset($this->variables[$key]);
+        $this->variables = array_values($this->variables);
+    }
+
     private function addProjectReferenceToBlocks(): void {
         foreach ($this->blocks as $block) {
             $block->setProject($this);
@@ -400,6 +406,10 @@ abstract class ProjectHandler {
                 return new BlockLexicalVariableSet($blockData);
             case "lexical_variable_get":
                 return new BlockLexicalVariableGet($blockData);
+            case "local_declaration_statement":
+                return new BlockLocalDeclarationStatement($blockData);
+            case "local_declaration_expression":
+                return new BlockLocalDeclarationExpression($blockData);
         }
 
         if (str_starts_with($blockData['type'], "color_")) {

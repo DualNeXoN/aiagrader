@@ -1076,6 +1076,59 @@ class BlockLexicalVariableGet extends Block {
     }
 }
 
+class BlockLocalDeclarationStatement extends Block {
+
+    protected $field;
+
+    function __construct($data) {
+        parent::__construct($data);
+        $this->field = $data['field'];
+        $this->interpreterText = "Setting <b>variable</b> key: <b>" . $this->field . "</b> value: ";
+    }
+
+    public function getField() {
+        return $this->field;
+    }
+
+    public function evaluate() {
+        parent::evaluate();
+        $this->project->setVariable($this->field, $this->child[0]->evaluate());
+        echo "Variable <b>" . $this->field . "</b> set to <b>" . $this->project->getVariable($this->field) . "</b><br>";
+        if(count($this->child) > 1) {
+            for($i = 1; $i < count($this->child); $i++) {
+                $this->child[$i]->evaluate();
+            }
+        }
+        $this->project->removeVariable($this->field);
+        echo "Variable <b>" . $this->field . "</b> cleared<br>";
+    }
+}
+
+class BlockLocalDeclarationExpression extends Block {
+
+    protected $field;
+
+    function __construct($data) {
+        parent::__construct($data);
+        $this->field = $data['field'];
+        $this->interpreterText = "Setting <b>variable</b> key: <b>" . $this->field . "</b> value: ";
+    }
+
+    public function getField() {
+        return $this->field;
+    }
+
+    public function evaluate() {
+        parent::evaluate();
+        $this->project->setVariable($this->field, $this->child[0]->evaluate());
+        echo "Variable <b>" . $this->field . "</b> set to <b>" . $this->project->getVariable($this->field) . "</b><br>";
+        $result = $this->child[1]->evaluate();
+        $this->project->removeVariable($this->field);
+        echo "Variable <b>" . $this->field . "</b> cleared<br>";
+        return $result;
+    }
+}
+
 class BlockControlsIf extends Block {
 
     protected ?Block $ifCondition = null;
