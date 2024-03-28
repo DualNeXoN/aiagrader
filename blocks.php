@@ -213,7 +213,7 @@ class BlockProceduresDefnoreturn extends Block {
             $this->evaluateEcho("Declaring local variable" . ($this->hasMoreVariablesThanOne() ? "s" : "") . "<br>");
             for($i = 0; $i < count($this->vars); $i++) {
                 $this->project->setVariable($this->vars[$i], $args[$i]);
-                $this->evaluateEcho("Local variable <b>" . $this->vars[$i] . "</b> set to <b>" . $this->project->getVariable($this->vars[$i]) . "</b><br>");
+                $this->evaluateEcho("Local variable <b>" . $this->vars[$i] . "</b> set to <b>" . (is_array($this->project->getVariable($this->vars[$i])) ? "[" . implode(' ', $this->project->getVariable($this->vars[$i])) . "]" : $this->project->getVariable($this->vars[$i])) . "</b><br>");
             }
         }
 
@@ -1129,7 +1129,7 @@ class BlockLexicalVariableSet extends Block {
     public function evaluate() {
         parent::evaluate();
         $this->project->setVariable($this->field, $this->child[0]->evaluate());
-        $this->evaluateEcho("Variable <b>" . $this->field . "</b> set to <b>" . $this->project->getVariable($this->field) . "</b><br>");
+        $this->evaluateEcho("Variable <b>" . $this->field . "</b> set to <b>" . (is_array($this->project->getVariable($this->field)) ? "[" . implode(' ', $this->project->getVariable($this->field)) . "]" : $this->project->getVariable($this->field)) . "</b><br>");
     }
 }
 
@@ -1149,7 +1149,7 @@ class BlockLexicalVariableGet extends Block {
 
     public function evaluate() {
         parent::evaluate();
-        $this->evaluateEcho("<b>" . $this->project->getVariable($this->field) . "</b><br>");
+        $this->evaluateEcho("<b>" . (is_array($this->project->getVariable($this->field)) ? "[" . implode(' ', $this->project->getVariable($this->field)) . "]" : $this->project->getVariable($this->field)) . "</b><br>");
         return $this->project->getVariable($this->field);
     }
 }
@@ -1178,11 +1178,11 @@ class BlockLocalDeclarationStatement extends Block {
         if($this->hasMoreVariablesThanOne()) {
             for($i = 0; $i < count($this->field); $i++) {
                 $this->project->setVariable($this->field[$i], $this->child[$i]->evaluate());
-                $this->evaluateEcho("Variable <b>" . $this->field[$i] . "</b> set to <b>" . $this->project->getVariable($this->field[$i]) . "</b><br>");
+                $this->evaluateEcho("Variable <b>" . $this->field[$i] . "</b> set to <b>" . (is_array($this->project->getVariable($this->field[$i])) ? "[" . implode(' ', $this->project->getVariable($this->field[$i])) . "]" : $this->project->getVariable($this->field[$i])) . "</b><br>");
             }
         } else {
             $this->project->setVariable($this->field, $this->child[0]->evaluate());
-            $this->evaluateEcho("Variable <b>" . $this->field . "</b> set to <b>" . $this->project->getVariable($this->field) . "</b><br>");
+            $this->evaluateEcho("Variable <b>" . $this->field . "</b> set to <b>" . (is_array($this->project->getVariable($this->field)) ? "[" . implode(' ', $this->project->getVariable($this->field)) . "]" : $this->project->getVariable($this->field)) . "</b><br>");
         }
 
         for ($i = ($this->hasMoreVariablesThanOne() ? count($this->field) : 1); $i < count($this->child); $i++) {
@@ -1354,6 +1354,51 @@ class BlockControlsIf extends Block {
                     }
                 }
             }
+        }
+    }
+}
+
+class BlockListsCreate extends Block {
+
+    protected int $items;
+
+    function __construct($data) {
+        parent::__construct($data);
+        $this->items = $data['items'];
+        $this->interpreterText = "Creating list<br>";
+    }
+
+    public function evaluate() {
+        parent::evaluate();
+        $list = array();
+        foreach($this->child as $child) {
+            $list[] = $child->evaluate();
+        }
+        return $list;
+    }
+}
+
+class BlockListsAddItems extends Block {
+
+    protected int $items;
+
+    function __construct($data) {
+        parent::__construct($data);
+        $this->items = $data['items'];
+        $this->interpreterText = "Adding items to list<br>";
+    }
+
+    public function evaluate() {
+        parent::evaluate();
+        $list = $this->child[0]->evaluate();
+        if(count($this->child) > 1) {
+            for($i = 1; $i < count($this->child); $i++) {
+                $list[] = $this->child[$i]->evaluate();
+            }
+        }
+
+        if(str_starts_with($this->child[0]->getType(), "lexical_variable")) {
+            $this->project->setVariable($this->child[0]->getField(), $list);
         }
     }
 }

@@ -423,6 +423,10 @@ abstract class ProjectHandler {
                 return new BlockLocalDeclarationStatement($blockData);
             case "local_declaration_expression":
                 return new BlockLocalDeclarationExpression($blockData);
+            case "lists_create_with":
+                return new BlockListsCreate($blockData);
+            case "lists_add_items":
+                return new BlockListsAddItems($blockData);
         }
 
         if (str_starts_with($blockData['type'], "color_")) {
