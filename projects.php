@@ -33,14 +33,17 @@ class Project {
         return $this->variables[$key];
     }
 
+    public function getVariables(): array {
+        return $this->variables;
+    }
+
     public function setVariable($key, $value): void {
         $this->variables[$key] = $value;
     }
 
     public function removeVariable(String $key): void {
-        if(!isset($this->variables[$key])) return;
+        if (!isset($this->variables[$key])) return;
         unset($this->variables[$key]);
-        $this->variables = array_values($this->variables);
     }
 
     private function addProjectReferenceToChildren(): void {
@@ -275,36 +278,28 @@ abstract class ProjectHandler {
             }
         }
 
-        //add conditions to controls_if
-        foreach ($blocks as $block) {
-            if (get_class($block) !== BlockControlsIf::class) continue;
-            foreach ($blocks as $searchedBlock) {
-                if (($searchedBlock->getParent()) != null && ($searchedBlock->getParent()->getId() != $block->getId())) continue;
-                if (!isset($searchedBlock->getMetadata()['name'])) continue;
-                if ($searchedBlock->getMetadata()['name'] == "IF0") {
-                    $block->setIfCondition($searchedBlock);
-                    $block->removeChild($searchedBlock);
-                }
-                if ($searchedBlock->getMetadata()['name'] == "IF1") {
-                    $block->setElseifCondition($searchedBlock);
-                    $block->removeChild($searchedBlock);
-                }
-            }
-        }
-
-        //sort and fix children of controls_if
-        foreach ($blocks as $blockControlsIf) {
-            if (get_class($blockControlsIf) !== BlockControlsIf::class) continue;
-            $cycle = 0;
-            $arrayDecider = [1 => 'if', 2 => 'elseif', 3 => 'else'];
-            foreach ($blockControlsIf->getChild() as $child) {
-                if ($child->getSequence() === 1) {
-                    $cycle++;
-                    if ($cycle === 2 && !$blockControlsIf->hasElseif()) {
-                        $cycle++;
+        for ($i = 0; $i < count($blocks); $i++) {
+            if (get_class($blocks[$i]) !== BlockControlsIf::class) continue;
+            $controlsBlock = $blocks[$i];
+            $conditionsCount = 1 + $controlsBlock->getElseifCount();
+            $conditionsProcessed = 0;
+            $codeArraySorter = -1;
+            for ($v = $i; $v < count($blocks); $v++) {
+                $nextBlock = $blocks[$v];
+                if($nextBlock->getParent() == $controlsBlock) {
+                    if($conditionsProcessed < $conditionsCount) {
+                        $controlsBlock->addCondition($nextBlock);
+                        $conditionsProcessed++;
+                    } else {
+                        if(isset($nextBlock->getMetadata()['name']) && (str_starts_with($nextBlock->getMetadata()['name'], "DO") || $nextBlock->getMetadata()['name'] == "ELSE")) {
+                            $codeArraySorter++;
+                        }
+                        $controlsBlock->addCode($codeArraySorter, $nextBlock);
                     }
                 }
-                $blockControlsIf->addCode($arrayDecider[$cycle], $child);
+            }
+            if($controlsBlock->getElseCount() > 0) {
+                $controlsBlock->addCondition(null);
             }
         }
 
@@ -408,6 +403,8 @@ abstract class ProjectHandler {
                 return new BlockLogicCompare($blockData);
             case "logic_or":
                 return new BlockLogicOr($blockData);
+            case "logic_operation":
+                return new BlockLogicOperation($blockData);
             case "global_declaration":
                 return new BlockGlobalDeclaration($blockData);
             case "controls_if":

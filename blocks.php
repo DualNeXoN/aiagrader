@@ -184,21 +184,46 @@ class BlockComponentMethod extends Block {
 class BlockProceduresDefnoreturn extends Block {
 
     protected String $field;
+    protected array $vars;
 
     function __construct($data) {
         parent::__construct($data);
-        $this->field = $data['field'];
+        $this->field = !is_array($data['field']) ? $data['field'] : $data['field'][0];
+        $this->vars = !is_array($data['field']) ? array() : $this->fillVars($data['field']);
         $this->interpreterText = "Starting defined function <b>" . $this->field . "</b><br>";
+    }
+
+    private function fillVars($data) {
+        unset($data[0]);
+        return array_values($data);
+    }
+
+    private function hasMoreVariablesThanOne(): bool {
+        return count($this->vars) > 1;
     }
 
     public function getField(): String {
         return $this->field;
     }
 
-    public function evaluate() {
+    public function evaluate($args = array()) {
         parent::evaluate();
+
+        if(count($this->vars) > 0) {
+            $this->evaluateEcho("Declaring local variable" . ($this->hasMoreVariablesThanOne() ? "s" : "") . "<br>");
+            for($i = 0; $i < count($this->vars); $i++) {
+                $this->project->setVariable($this->vars[$i], $args[$i]);
+                $this->evaluateEcho("Local variable <b>" . $this->vars[$i] . "</b> set to <b>" . $this->project->getVariable($this->vars[$i]) . "</b><br>");
+            }
+        }
+
         foreach ($this->child as $child) {
             $child->evaluate();
+        }
+
+        for($i = 0; $i < count($this->vars); $i++) {
+            $this->project->removeVariable($this->vars[$i]);
+            $this->evaluateEcho("Variable <b>" . $this->vars[$i] . "</b> cleared<br>");
         }
     }
 }
@@ -239,7 +264,11 @@ class BlockProceduresCallnoreturn extends Block {
 
     public function evaluate() {
         parent::evaluate();
-        return $this->project->getDefinedFunction($this->field)->evaluate();
+        $args = array();
+        foreach($this->child as $arg) {
+            $args[] = $arg->evaluate();
+        }
+        $this->project->getDefinedFunction($this->field)->evaluate($args);
     }
 }
 
@@ -339,7 +368,7 @@ class BlockText extends Block {
     function __construct($data) {
         parent::__construct($data);
         $this->field = (!is_array($data['field']) ? $data['field'] : "");
-        $this->interpreterText = "<b>" . $this->field . "</b> (text)<br>";
+        $this->interpreterText = "[GET] <b>" . $this->field . "</b> (text)<br>";
     }
 
     public function getField(): String {
@@ -364,7 +393,11 @@ class BlockTextJoin extends Block {
 
     public function evaluate() {
         parent::evaluate();
-        return $this->child[0]->evaluate() . $this->child[1]->evaluate();
+        $result = "";
+        foreach($this->child as $child) {
+            $result = $result . $child->evaluate();
+        }
+        return $result;
     }
 }
 
@@ -413,7 +446,7 @@ class BlockTextContains extends Block {
 
     public function evaluate() {
         parent::evaluate();
-        if($this->field == "CONTAINS") return str_contains($this->child[0]->evaluate(), $this->child[1]->evaluate());
+        if ($this->field == "CONTAINS") return str_contains($this->child[0]->evaluate(), $this->child[1]->evaluate());
         $this->evaluateEcho("<div style=\"color:yellow\">BlockTextContains unimplemented mode (" . $this->field . "). Returning false</div>");
         return false;
     }
@@ -534,7 +567,7 @@ class BlockMathNumber extends Block {
     function __construct($data) {
         parent::__construct($data);
         $this->field = $data['field'];
-        $this->interpreterText = "<b>" . $this->field . "</b> (number)<br>";
+        $this->interpreterText = "[GET] <b>" . $this->field . "</b> (number)<br>";
     }
 
     public function getField(): int {
@@ -556,7 +589,10 @@ class BlockMathAdd extends Block {
 
     public function evaluate(): int {
         parent::evaluate();
-        $result = $this->child[0]->evaluate() + $this->child[1]->evaluate();
+        $result = $this->child[0]->evaluate();
+        for ($i = 1; $i < count($this->child); $i++) {
+            $result = $result + $this->child[$i]->evaluate();
+        }
         return $result;
     }
 }
@@ -584,7 +620,10 @@ class BlockMathMultiply extends Block {
 
     public function evaluate(): int {
         parent::evaluate();
-        $result = $this->child[0]->evaluate() * $this->child[1]->evaluate();
+        $result = $this->child[0]->evaluate();
+        for ($i = 1; $i < count($this->child); $i++) {
+            $result = $result * $this->child[$i]->evaluate();
+        }
         return $result;
     }
 }
@@ -614,17 +653,23 @@ class BlockMathBitwise extends Block {
         $this->interpreterText = "Math bitwise <b>" . $this->map[$this->field] . "</b><br>";
     }
 
-    public function evaluate(): int {
+    public function evaluate() {
         parent::evaluate();
-        switch ($this->map[$this->field]) {
-            case '&':
-                return $this->child[0]->evaluate() & $this->child[1]->evaluate();
-            case '|':
-                return $this->child[0]->evaluate() | $this->child[1]->evaluate();
-            case '^':
-                return $this->child[0]->evaluate() ^ $this->child[1]->evaluate();
+        $result = $this->child[0]->evaluate();
+        for ($i = 1; $i < count($this->child); $i++) {
+            switch ($this->map[$this->field]) {
+                case '&':
+                    $result &= $this->child[$i]->evaluate();
+                    break;
+                case '|':
+                    $result |= $this->child[$i]->evaluate();
+                    break;
+                case '^':
+                    $result ^= $this->child[$i]->evaluate();
+                    break;
+            }
         }
-        return null;
+        return $result;
     }
 }
 
@@ -888,11 +933,15 @@ class BlockMathOnList extends Block {
 
     public function evaluate(): mixed {
         parent::evaluate();
+        $array = array();
+        foreach($this->child as $child) {
+            $array[] = $child->evaluate();
+        }
         switch ($this->field) {
             case 'MIN':
-                return min($this->child[0]->evaluate(), $this->child[1]->evaluate());
+                return min($array);
             case 'MAX':
-                return max($this->child[0]->evaluate(), $this->child[1]->evaluate());
+                return max($array);
         }
         return null;
     }
@@ -935,7 +984,7 @@ class BlockLogicBoolean extends Block {
     function __construct($data) {
         parent::__construct($data);
         $this->field = ($data['field'] == "FALSE" ? false : true);
-        $this->interpreterText = "<b>" . $this->field . "</b> (bool)<br>";
+        $this->interpreterText = "[GET] <b>" . $this->field . "</b> (bool)<br>";
     }
 
     public function getField(): bool {
@@ -945,6 +994,31 @@ class BlockLogicBoolean extends Block {
     public function evaluate() {
         parent::evaluate();
         return $this->field;
+    }
+}
+
+class BlockLogicOperation extends Block {
+
+    protected String $field;
+
+    function __construct($data) {
+        parent::__construct($data);
+        $this->field = $data['field'];
+        $this->interpreterText = "Logic operation <b>" . $this->field . "</b><br>";
+    }
+
+    public function getField(): bool {
+        return $this->field;
+    }
+
+    public function evaluate() {
+        parent::evaluate();
+        $result = $this->child[0]->evaluate();
+        for ($i = 1; $i < count($this->child); $i++) {
+            if ($this->field == "AND") $result = $result && $this->child[$i]->evaluate();
+            else $result = $result || $this->child[$i]->evaluate();
+        }
+        return $result;
     }
 }
 
@@ -1087,24 +1161,43 @@ class BlockLocalDeclarationStatement extends Block {
     function __construct($data) {
         parent::__construct($data);
         $this->field = $data['field'];
-        $this->interpreterText = "Setting <b>variable</b> key: <b>" . $this->field . "</b> value: ";
+        $this->interpreterText = "Declaring local variable" . ($this->hasMoreVariablesThanOne() ? "s" : "") . "<br>";
     }
 
     public function getField() {
         return $this->field;
     }
 
+    public function hasMoreVariablesThanOne(): bool {
+        return count($this->field) > 1;
+    }
+
     public function evaluate() {
         parent::evaluate();
-        $this->project->setVariable($this->field, $this->child[0]->evaluate());
-        $this->evaluateEcho("Variable <b>" . $this->field . "</b> set to <b>" . $this->project->getVariable($this->field) . "</b><br>");
-        if(count($this->child) > 1) {
-            for($i = 1; $i < count($this->child); $i++) {
-                $this->child[$i]->evaluate();
+
+        if($this->hasMoreVariablesThanOne()) {
+            for($i = 0; $i < count($this->field); $i++) {
+                $this->project->setVariable($this->field[$i], $this->child[$i]->evaluate());
+                $this->evaluateEcho("Variable <b>" . $this->field[$i] . "</b> set to <b>" . $this->project->getVariable($this->field[$i]) . "</b><br>");
             }
+        } else {
+            $this->project->setVariable($this->field, $this->child[0]->evaluate());
+            $this->evaluateEcho("Variable <b>" . $this->field . "</b> set to <b>" . $this->project->getVariable($this->field) . "</b><br>");
         }
-        $this->project->removeVariable($this->field);
-        $this->evaluateEcho("Variable <b>" . $this->field . "</b> cleared<br>");
+
+        for ($i = ($this->hasMoreVariablesThanOne() ? count($this->field) : 1); $i < count($this->child); $i++) {
+            $this->child[$i]->evaluate();
+        }
+
+        if($this->hasMoreVariablesThanOne()) {
+            for($i = 0; $i < count($this->field); $i++) {
+                $this->project->removeVariable($this->field[$i]);
+                $this->evaluateEcho("Variable <b>" . $this->field[$i] . "</b> cleared<br>");
+            }
+        } else {
+            $this->project->removeVariable($this->field);
+            $this->evaluateEcho("Variable <b>" . $this->field . "</b> cleared<br>");
+        }
     }
 }
 
@@ -1115,7 +1208,11 @@ class BlockLocalDeclarationExpression extends Block {
     function __construct($data) {
         parent::__construct($data);
         $this->field = $data['field'];
-        $this->interpreterText = "Setting <b>variable</b> key: <b>" . $this->field . "</b> value: ";
+        $this->interpreterText = "Declaring local variable" . ($this->hasMoreVariablesThanOne() ? "s" : "") . "<br>";
+    }
+
+    public function hasMoreVariablesThanOne(): bool {
+        return count($this->field) > 1;
     }
 
     public function getField() {
@@ -1124,11 +1221,29 @@ class BlockLocalDeclarationExpression extends Block {
 
     public function evaluate() {
         parent::evaluate();
-        $this->project->setVariable($this->field, $this->child[0]->evaluate());
-        $this->evaluateEcho("Variable <b>" . $this->field . "</b> set to <b>" . $this->project->getVariable($this->field) . "</b><br>");
-        $result = $this->child[1]->evaluate();
-        $this->project->removeVariable($this->field);
-        $this->evaluateEcho("Variable <b>" . $this->field . "</b> cleared<br>");
+
+        if($this->hasMoreVariablesThanOne()) {
+            for($i = 0; $i < count($this->field); $i++) {
+                $this->project->setVariable($this->field[$i], $this->child[$i]->evaluate());
+                $this->evaluateEcho("Variable <b>" . $this->field[$i] . "</b> set to <b>" . $this->project->getVariable($this->field[$i]) . "</b><br>");
+            }
+        } else {
+            $this->project->setVariable($this->field, $this->child[0]->evaluate());
+            $this->evaluateEcho("Variable <b>" . $this->field . "</b> set to <b>" . $this->project->getVariable($this->field) . "</b><br>");
+        }
+
+        $result = $this->child[count($this->field)]->evaluate();
+
+        if($this->hasMoreVariablesThanOne()) {
+            for($i = 0; $i < count($this->field); $i++) {
+                $this->project->removeVariable($this->field[$i]);
+                $this->evaluateEcho("Variable <b>" . $this->field[$i] . "</b> cleared<br>");
+            }
+        } else {
+            $this->project->removeVariable($this->field);
+            $this->evaluateEcho("Variable <b>" . $this->field . "</b> cleared<br>");
+        }
+
         return $result;
     }
 }
@@ -1142,7 +1257,7 @@ class BlockControlsDoThenReturn extends Block {
 
     public function evaluate() {
         parent::evaluate();
-        for($i = 1; $i < count($this->child); $i++) {
+        for ($i = 1; $i < count($this->child); $i++) {
             $this->child[$i]->evaluate();
         }
         $this->evaluateEcho("Evaluation <b>do then return</b> returning ");
@@ -1150,7 +1265,6 @@ class BlockControlsDoThenReturn extends Block {
         $this->evaluateEcho("Evaluation <b>do then return</b> done<br>");
         return $result;
     }
-
 }
 
 class BlockControlsForRange extends Block {
@@ -1166,94 +1280,79 @@ class BlockControlsForRange extends Block {
         $end = $this->child[1]->evaluate();
         $step = $this->child[2]->evaluate();
         for ($index = $start; $index <= $end; $index = $index + $step) {
-            if(count($this->child) <= 3) break;
-            for($i = 3; $i < count($this->child); $i++) {
+            if (count($this->child) <= 3) break;
+            for ($i = 3; $i < count($this->child); $i++) {
                 $this->child[$i]->evaluate();
             }
         }
     }
-
 }
 
 class BlockControlsIf extends Block {
 
-    protected ?Block $ifCondition = null;
-    protected ?Block $elseifCondition = null;
-    protected array $code = ['if' => array(), 'elseif' => array(), 'else' => array()];
-
-    protected bool $hasElseif;
-    protected bool $hasElse;
+    protected int $elseifCount = 0;
+    protected int $elseCount = 0;
+    protected array $conditionBlocks = array();
+    protected array $codeBlocks = array();
 
     function __construct($data) {
         parent::__construct($data);
-        $this->hasElseif = isset($data['elseif']);
-        $this->hasElse = isset($data['else']);
+        $this->elseifCount = isset($data['elseif']) ? $data['elseif'] : 0;
+        $this->elseCount = isset($data['else']) ? $data['else'] : 0;
         $this->interpreterText = "Evaluating <b>if controls</b><br>";
     }
 
-    public function hasElseif(): bool {
-        return $this->hasElseif;
+    public function getElseifCount(): int {
+        return $this->elseifCount;
     }
 
-    public function hasElse(): bool {
-        return $this->hasElse;
+    public function getElseCount(): int {
+        return $this->elseCount;
     }
 
-    public function getIfCondition(): ?Block {
-        return $this->ifCondition;
+    public function addCondition(?Block $block): void {
+        $this->conditionBlocks[] = $block;
     }
 
-    public function getElseifCondition(): ?Block {
-        return $this->elseifCondition;
+    public function getConditionBlocks(): array {
+        return $this->conditionBlocks;
     }
 
-    public function setIfCondition(Block $block) {
-        $this->ifCondition = $block;
+    public function addCode(int $index, Block $block): void {
+        if(!isset($this->codeBlocks[$index])) {
+            $this->codeBlocks[$index] = array();
+        }
+        $this->codeBlocks[$index][] = $block;
     }
 
-    public function setElseifCondition(Block $block) {
-        $this->elseifCondition = $block;
-    }
-
-    public function addCode(String $conditionType, Block $block): void {
-        array_push($this->code[$conditionType], $block);
-    }
-
-    public function getCode(): array {
-        return $this->code;
+    public function getCodeBlocks(): array {
+        return $this->codeBlocks;
     }
 
     public function evaluate() {
         parent::evaluate();
-        $this->evaluateEcho("Controls contains if " . ($this->hasElseif ? "& elseif " : "") . ($this->hasElse ? "& else " : "") . "<br>");
-        $this->evaluateEcho("Testing <b>IF</b> statement<br>");
+
+        $this->evaluateEcho("This control has 1x if, " . $this->elseifCount . "x elseif, " . $this->elseCount . "x else<br>");
+
         $lastResult = false;
-
-        if ($lastResult = $this->ifCondition->evaluate()) {
-            $this->evaluateEcho("Condition <b>IF</b> is <b>TRUE</b>. Evaluating <b>IF</b> code<br>");
-            foreach ($this->code['if'] as $child) {
-                $child->evaluate();
-            }
-        } else {
-            $this->evaluateEcho("Condition <b>IF</b> is <b>FALSE</b><br>");
-        }
-
-        if ($lastResult == false && $this->hasElseif) {
-            $this->evaluateEcho("Testing <b>ELSE IF</b> statement<br>");
-            if ($lastResult = $this->elseifCondition->evaluate()) {
-                $this->evaluateEcho("Condition <b>ELSE IF</b> is <b>TRUE</b>. Evaluating <b>ELSE IF</b> code<br>");
-                foreach ($this->code['elseif'] as $child) {
-                    $child->evaluate();
+        for($i = 0; $i < count($this->conditionBlocks); $i++) {
+            if($lastResult == false) {
+                if($this->conditionBlocks[$i] != null) {
+                    $this->evaluateEcho("Testing <b>" . ($i == 0 ? "IF" : "ELSEIF") . "</b> condition<br>");
+                    if($lastResult = $this->conditionBlocks[$i]->evaluate()) {
+                        $this->evaluateEcho("Condition is TRUE. Evaluating inner code<br>");
+                        foreach($this->codeBlocks[$i] as $child) {
+                            $child->evaluate();
+                        }
+                    } else {
+                        $this->evaluateEcho("Condition is FALSE<br>");
+                    }
+                } else {
+                    $this->evaluateEcho("Evaluating <b>ELSE</b> inner code<br>");
+                    foreach($this->codeBlocks[$i] as $child) {
+                        $child->evaluate();
+                    }
                 }
-            } else {
-                $this->evaluateEcho("Condition <b>ELSE IF</b> is <b>FALSE</b><br>");
-            }
-        }
-
-        if ($lastResult == false && $this->hasElse) {
-            $this->evaluateEcho("Evaluating <b>ELSE</b> code<br>");
-            foreach ($this->code['else'] as $child) {
-                $child->evaluate();
             }
         }
     }
