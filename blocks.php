@@ -209,9 +209,9 @@ class BlockProceduresDefnoreturn extends Block {
     public function evaluate($args = array()) {
         parent::evaluate();
 
-        if(count($this->vars) > 0) {
+        if (count($this->vars) > 0) {
             $this->evaluateEcho("Declaring local variable" . ($this->hasMoreVariablesThanOne() ? "s" : "") . "<br>");
-            for($i = 0; $i < count($this->vars); $i++) {
+            for ($i = 0; $i < count($this->vars); $i++) {
                 $this->project->setVariable($this->vars[$i], $args[$i]);
                 $this->evaluateEcho("Local variable <b>" . $this->vars[$i] . "</b> set to <b>" . (is_array($this->project->getVariable($this->vars[$i])) ? "[" . implode(' ', $this->project->getVariable($this->vars[$i])) . "]" : $this->project->getVariable($this->vars[$i])) . "</b><br>");
             }
@@ -221,7 +221,7 @@ class BlockProceduresDefnoreturn extends Block {
             $child->evaluate();
         }
 
-        for($i = 0; $i < count($this->vars); $i++) {
+        for ($i = 0; $i < count($this->vars); $i++) {
             $this->project->removeVariable($this->vars[$i]);
             $this->evaluateEcho("Variable <b>" . $this->vars[$i] . "</b> cleared<br>");
         }
@@ -265,7 +265,7 @@ class BlockProceduresCallnoreturn extends Block {
     public function evaluate() {
         parent::evaluate();
         $args = array();
-        foreach($this->child as $arg) {
+        foreach ($this->child as $arg) {
             $args[] = $arg->evaluate();
         }
         $this->project->getDefinedFunction($this->field)->evaluate($args);
@@ -394,7 +394,7 @@ class BlockTextJoin extends Block {
     public function evaluate() {
         parent::evaluate();
         $result = "";
-        foreach($this->child as $child) {
+        foreach ($this->child as $child) {
             $result = $result . $child->evaluate();
         }
         return $result;
@@ -557,6 +557,35 @@ class BlockColor extends Block {
             $child->evaluate();
         }
         return $this->field;
+    }
+}
+
+class BlockColorMakeColor extends Block {
+
+    function __construct($data) {
+        parent::__construct($data);
+        $this->interpreterText = "Making color<br>";
+    }
+
+    private function rgbToHex($red, $green, $blue) {
+        return sprintf("#%02x%02x%02x", $red, $green, $blue);
+    }
+
+    private function rgbaToHex($red, $green, $blue, $alpha) {
+        $alphaHex = dechex((int) round($alpha * 255));
+        return sprintf("#%02x%02x%02x%02x", $red, $green, $blue, $alphaHex);
+    }
+    
+
+    public function evaluate() {
+        parent::evaluate();
+        $list = $this->child[0]->evaluate();
+        if(count($list) == 3) {
+            return $this->rgbToHex($list[0], $list[1], $list[2]);
+        } else if(count($list) == 4) {
+            return $this->rgbaToHex($list[0], $list[1], $list[2], $list[3]);
+        }
+        return null;
     }
 }
 
@@ -934,7 +963,7 @@ class BlockMathOnList extends Block {
     public function evaluate(): mixed {
         parent::evaluate();
         $array = array();
-        foreach($this->child as $child) {
+        foreach ($this->child as $child) {
             $array[] = $child->evaluate();
         }
         switch ($this->field) {
@@ -1175,8 +1204,8 @@ class BlockLocalDeclarationStatement extends Block {
     public function evaluate() {
         parent::evaluate();
 
-        if($this->hasMoreVariablesThanOne()) {
-            for($i = 0; $i < count($this->field); $i++) {
+        if ($this->hasMoreVariablesThanOne()) {
+            for ($i = 0; $i < count($this->field); $i++) {
                 $this->project->setVariable($this->field[$i], $this->child[$i]->evaluate());
                 $this->evaluateEcho("Variable <b>" . $this->field[$i] . "</b> set to <b>" . (is_array($this->project->getVariable($this->field[$i])) ? "[" . implode(' ', $this->project->getVariable($this->field[$i])) . "]" : $this->project->getVariable($this->field[$i])) . "</b><br>");
             }
@@ -1189,8 +1218,8 @@ class BlockLocalDeclarationStatement extends Block {
             $this->child[$i]->evaluate();
         }
 
-        if($this->hasMoreVariablesThanOne()) {
-            for($i = 0; $i < count($this->field); $i++) {
+        if ($this->hasMoreVariablesThanOne()) {
+            for ($i = 0; $i < count($this->field); $i++) {
                 $this->project->removeVariable($this->field[$i]);
                 $this->evaluateEcho("Variable <b>" . $this->field[$i] . "</b> cleared<br>");
             }
@@ -1222,8 +1251,8 @@ class BlockLocalDeclarationExpression extends Block {
     public function evaluate() {
         parent::evaluate();
 
-        if($this->hasMoreVariablesThanOne()) {
-            for($i = 0; $i < count($this->field); $i++) {
+        if ($this->hasMoreVariablesThanOne()) {
+            for ($i = 0; $i < count($this->field); $i++) {
                 $this->project->setVariable($this->field[$i], $this->child[$i]->evaluate());
                 $this->evaluateEcho("Variable <b>" . $this->field[$i] . "</b> set to <b>" . $this->project->getVariable($this->field[$i]) . "</b><br>");
             }
@@ -1234,8 +1263,8 @@ class BlockLocalDeclarationExpression extends Block {
 
         $result = $this->child[count($this->field)]->evaluate();
 
-        if($this->hasMoreVariablesThanOne()) {
-            for($i = 0; $i < count($this->field); $i++) {
+        if ($this->hasMoreVariablesThanOne()) {
+            for ($i = 0; $i < count($this->field); $i++) {
                 $this->project->removeVariable($this->field[$i]);
                 $this->evaluateEcho("Variable <b>" . $this->field[$i] . "</b> cleared<br>");
             }
@@ -1319,7 +1348,7 @@ class BlockControlsIf extends Block {
     }
 
     public function addCode(int $index, Block $block): void {
-        if(!isset($this->codeBlocks[$index])) {
+        if (!isset($this->codeBlocks[$index])) {
             $this->codeBlocks[$index] = array();
         }
         $this->codeBlocks[$index][] = $block;
@@ -1335,13 +1364,13 @@ class BlockControlsIf extends Block {
         $this->evaluateEcho("This control has 1x if, " . $this->elseifCount . "x elseif, " . $this->elseCount . "x else<br>");
 
         $lastResult = false;
-        for($i = 0; $i < count($this->conditionBlocks); $i++) {
-            if($lastResult == false) {
-                if($this->conditionBlocks[$i] != null) {
+        for ($i = 0; $i < count($this->conditionBlocks); $i++) {
+            if ($lastResult == false) {
+                if ($this->conditionBlocks[$i] != null) {
                     $this->evaluateEcho("Testing <b>" . ($i == 0 ? "IF" : "ELSEIF") . "</b> condition<br>");
-                    if($lastResult = $this->conditionBlocks[$i]->evaluate()) {
+                    if ($lastResult = $this->conditionBlocks[$i]->evaluate()) {
                         $this->evaluateEcho("Condition is TRUE. Evaluating inner code<br>");
-                        foreach($this->codeBlocks[$i] as $child) {
+                        foreach ($this->codeBlocks[$i] as $child) {
                             $child->evaluate();
                         }
                     } else {
@@ -1349,7 +1378,7 @@ class BlockControlsIf extends Block {
                     }
                 } else {
                     $this->evaluateEcho("Evaluating <b>ELSE</b> inner code<br>");
-                    foreach($this->codeBlocks[$i] as $child) {
+                    foreach ($this->codeBlocks[$i] as $child) {
                         $child->evaluate();
                     }
                 }
@@ -1371,7 +1400,7 @@ class BlockListsCreate extends Block {
     public function evaluate() {
         parent::evaluate();
         $list = array();
-        foreach($this->child as $child) {
+        foreach ($this->child as $child) {
             $list[] = $child->evaluate();
         }
         return $list;
@@ -1391,13 +1420,13 @@ class BlockListsAddItems extends Block {
     public function evaluate() {
         parent::evaluate();
         $list = $this->child[0]->evaluate();
-        if(count($this->child) > 1) {
-            for($i = 1; $i < count($this->child); $i++) {
+        if (count($this->child) > 1) {
+            for ($i = 1; $i < count($this->child); $i++) {
                 $list[] = $this->child[$i]->evaluate();
             }
         }
 
-        if(str_starts_with($this->child[0]->getType(), "lexical_variable")) {
+        if (str_starts_with($this->child[0]->getType(), "lexical_variable")) {
             $this->project->setVariable($this->child[0]->getField(), $list);
         }
     }

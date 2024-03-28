@@ -427,6 +427,8 @@ abstract class ProjectHandler {
                 return new BlockListsCreate($blockData);
             case "lists_add_items":
                 return new BlockListsAddItems($blockData);
+            case "color_make_color":
+                return new BlockColorMakeColor($blockData);                
         }
 
         if (str_starts_with($blockData['type'], "color_")) {
