@@ -76,7 +76,7 @@ class Project {
         $array = array();
         foreach($this->blocks as $block) {
             if($block->getType() == "component_event") {
-                $array[] = $block;
+                $array[$block->getInstanceName()] = $block;
             }
         }
         ksort($array);
