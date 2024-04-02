@@ -11,6 +11,7 @@ class Block {
     protected array $child;
     protected array $metadata;
     protected String $interpreterText;
+    protected String $alias = "Undefined block";
 
     function __construct($data) {
         $this->id = $data['id'];
@@ -97,6 +98,10 @@ class Block {
         return $this->metadata;
     }
 
+    public function getAlias(): String {
+        return $this->alias;
+    }
+
     protected function evaluateEcho(String $str) {
         echo $str;
     }
@@ -114,6 +119,7 @@ class BlockComponentEvent extends Block {
 
     function __construct($data) {
         parent::__construct($data);
+        $this->alias = "Event";
         $this->componentType = $data['component_type'];
         $this->instanceName = $data['instance_name'];
         $this->eventName = $data['event_name'];
@@ -148,6 +154,7 @@ class BlockComponentMethod extends Block {
 
     function __construct($data) {
         parent::__construct($data);
+        $this->alias = "Method";
         $this->componentType = $data['component_type'];
         $this->methodName = $data['method_name'];
         $this->instanceName = $data['instance_name'];
@@ -188,6 +195,7 @@ class BlockProceduresDefnoreturn extends Block {
 
     function __construct($data) {
         parent::__construct($data);
+        $this->alias = "Void procedure definition";
         $this->field = !is_array($data['field']) ? $data['field'] : $data['field'][0];
         $this->vars = !is_array($data['field']) ? array() : $this->fillVars($data['field']);
         $this->interpreterText = "Starting defined function <b>" . $this->field . "</b><br>";
@@ -234,6 +242,7 @@ class BlockProceduresDefreturn extends Block {
 
     function __construct($data) {
         parent::__construct($data);
+        $this->alias = "No-void procedure definition";
         $this->field = $data['field'];
         $this->interpreterText = "Starting defined function <b>" . $this->field . "</b><br>";
     }
@@ -254,6 +263,7 @@ class BlockProceduresCallnoreturn extends Block {
 
     function __construct($data) {
         parent::__construct($data);
+        $this->alias = "Call void procedure";
         $this->field = $data['field'];
         $this->interpreterText = "Calling defined function <b>" . $this->field . "</b><br>";
     }
@@ -278,6 +288,7 @@ class BlockProceduresCallreturn extends Block {
 
     function __construct($data) {
         parent::__construct($data);
+        $this->alias = "Call no-void procedure";
         $this->field = $data['field'];
         $this->interpreterText = "Calling defined function <b>" . $this->field . "</b><br>";
     }
@@ -301,6 +312,7 @@ class BlockComponentSetGet extends Block {
 
     function __construct($data) {
         parent::__construct($data);
+        $this->alias = "Setter/Getter";
         $this->componentType = $data['component_type'];
         $this->setOrGet = $data['set_or_get'];
         $this->propertyName = $data['property_name'];
@@ -344,6 +356,7 @@ class BlockComponentComponentBlock extends Block {
 
     function __construct($data) {
         parent::__construct($data);
+        $this->alias = "Component field";
         $this->field = $data['field'];
         $this->interpreterText = "<b>" . $this->field . "</b> (component instance)<br>";
     }
@@ -367,6 +380,7 @@ class BlockText extends Block {
 
     function __construct($data) {
         parent::__construct($data);
+        $this->alias = "Text";
         $this->field = (!is_array($data['field']) ? $data['field'] : "");
         $this->interpreterText = "[GET] <b>" . $this->field . "</b> (text)<br>";
     }
@@ -388,6 +402,7 @@ class BlockTextJoin extends Block {
 
     function __construct($data) {
         parent::__construct($data);
+        $this->alias = "Text join";
         $this->interpreterText = "Joining text<br>";
     }
 
@@ -405,6 +420,7 @@ class BlockTextLength extends Block {
 
     function __construct($data) {
         parent::__construct($data);
+        $this->alias = "Text length";
         $this->interpreterText = "Text length<br>";
     }
 
@@ -418,6 +434,7 @@ class BlockTextStartsAt extends Block {
 
     function __construct($data) {
         parent::__construct($data);
+        $this->alias = "Text starts at";
         $this->interpreterText = "Text starts at<br>";
     }
 
@@ -440,6 +457,7 @@ class BlockTextContains extends Block {
 
     function __construct($data) {
         parent::__construct($data);
+        $this->alias = "Text contains";
         $this->field = $data['field'];
         $this->interpreterText = "Text contains<br>";
     }
@@ -458,6 +476,7 @@ class BlockTextReplaceAll extends Block {
 
     function __construct($data) {
         parent::__construct($data);
+        $this->alias = "Text replace all";
         $this->interpreterText = "Text replace all<br>";
     }
 
@@ -471,6 +490,7 @@ class BlockTextReverse extends Block {
 
     function __construct($data) {
         parent::__construct($data);
+        $this->alias = "Text reverse";
         $this->interpreterText = "Text reverse<br>";
     }
 
@@ -486,6 +506,7 @@ class BlockTextChangeCase extends Block {
 
     function __construct($data) {
         parent::__construct($data);
+        $this->alias = "Text change case";
         $this->field = $data['field'];
         $this->interpreterText = "Text change case to " . $this->field . "<br>";
     }
@@ -504,6 +525,7 @@ class BlockTextCompare extends Block {
 
     function __construct($data) {
         parent::__construct($data);
+        $this->alias = "Text compare";
         $this->field = $data['field'];
         $this->interpreterText = "Text compare " . $this->field . "<br>";
     }
@@ -528,6 +550,7 @@ class BlockTextIsEmpty extends Block {
 
     function __construct($data) {
         parent::__construct($data);
+        $this->alias = "Text is empty";
         $this->interpreterText = "Is text empty?<br>";
     }
 
@@ -543,6 +566,7 @@ class BlockColor extends Block {
 
     function __construct($data) {
         parent::__construct($data);
+        $this->alias = "Color";
         $this->field = $data['field'];
         $this->interpreterText = "<b>" . $this->field . "</b> (color)<br>";
     }
@@ -564,6 +588,7 @@ class BlockColorMakeColor extends Block {
 
     function __construct($data) {
         parent::__construct($data);
+        $this->alias = "Make color";
         $this->interpreterText = "Making color<br>";
     }
 
@@ -595,6 +620,7 @@ class BlockMathNumber extends Block {
 
     function __construct($data) {
         parent::__construct($data);
+        $this->alias = "Number";
         $this->field = $data['field'];
         $this->interpreterText = "[GET] <b>" . $this->field . "</b> (number)<br>";
     }
@@ -613,6 +639,7 @@ class BlockMathAdd extends Block {
 
     function __construct($data) {
         parent::__construct($data);
+        $this->alias = "Math add";
         $this->interpreterText = "<b>Math addition</b>:<br>";
     }
 
@@ -630,6 +657,7 @@ class BlockMathSubtract extends Block {
 
     function __construct($data) {
         parent::__construct($data);
+        $this->alias = "Math subtract";
         $this->interpreterText = "<b>Math subtract</b>:<br>";
     }
 
@@ -644,6 +672,7 @@ class BlockMathMultiply extends Block {
 
     function __construct($data) {
         parent::__construct($data);
+        $this->alias = "Math multiply";
         $this->interpreterText = "<b>Math multiply</b>:<br>";
     }
 
@@ -661,6 +690,7 @@ class BlockMathPower extends Block {
 
     function __construct($data) {
         parent::__construct($data);
+        $this->alias = "Math power";
         $this->interpreterText = "<b>Math power</b>:<br>";
     }
 
@@ -678,6 +708,7 @@ class BlockMathBitwise extends Block {
 
     function __construct($data) {
         parent::__construct($data);
+        $this->alias = "Math bitwise";
         $this->field = $data['field'];
         $this->interpreterText = "Math bitwise <b>" . $this->map[$this->field] . "</b><br>";
     }
@@ -709,6 +740,7 @@ class BlockMathCompare extends Block {
 
     function __construct($data) {
         parent::__construct($data);
+        $this->alias = "Math compare";
         $this->field = $data['field'];
         $this->interpreterText = "Comparing <b>" . $this->map[$this->field] . "</b><br>";
     }
@@ -739,6 +771,7 @@ class BlockMathSingle extends Block {
 
     function __construct($data) {
         parent::__construct($data);
+        $this->alias = "Math function (ROOT/ABS/NEG/LN/...)";
         $this->field = $data['field'];
         $this->interpreterText = $this->field . "<br>";
     }
@@ -771,6 +804,7 @@ class BlockMathDivision extends Block {
 
     function __construct($data) {
         parent::__construct($data);
+        $this->alias = "Math division (classic)";
         $this->interpreterText =  "Math division:<br>";
     }
 
@@ -786,6 +820,7 @@ class BlockMathDivide extends Block {
 
     function __construct($data) {
         parent::__construct($data);
+        $this->alias = "Math division (modulo/remainder/quotient)";
         $this->field = $data['field'];
         $this->interpreterText = $this->field . "<br>";
     }
@@ -809,6 +844,7 @@ class BlockMathConvertAngles extends Block {
 
     function __construct($data) {
         parent::__construct($data);
+        $this->alias = "Math angle convert";
         $this->field = $data['field'];
         $this->interpreterText = $this->field . "<br>";
     }
@@ -831,6 +867,7 @@ class BlockMathIsNumber extends Block {
 
     function __construct($data) {
         parent::__construct($data);
+        $this->alias = "Math is number";
         $this->field = $data['field'];
         $this->interpreterText =  "Is " . $this->field . "?<br>";
     }
@@ -856,6 +893,7 @@ class BlockMathConvertNumber extends Block {
 
     function __construct($data) {
         parent::__construct($data);
+        $this->alias = "Math convert number";
         $this->field = $data['field'];
         $this->interpreterText =  $this->field . "<br>";
     }
@@ -883,6 +921,7 @@ class BlockMathNumberRadix extends Block {
 
     function __construct($data) {
         parent::__construct($data);
+        $this->alias = "Math radix";
         $this->fieldType = $data['field'][0];
         $this->field = $data['field'][1];
         $this->interpreterText =  $this->field . " (" . $this->fieldType . ")<br>";
@@ -898,6 +937,7 @@ class BlockMathFormatAsDecimal extends Block {
 
     function __construct($data) {
         parent::__construct($data);
+        $this->alias = "Math format to decimal";
         $this->interpreterText =  "Format as decimal:<br>";
     }
 
@@ -911,6 +951,7 @@ class BlockMathAtan2 extends Block {
 
     function __construct($data) {
         parent::__construct($data);
+        $this->alias = "Math atan2";
         $this->interpreterText = "ATAN2<br>";
     }
 
@@ -926,6 +967,7 @@ class BlockMathTrig extends Block {
 
     function __construct($data) {
         parent::__construct($data);
+        $this->alias = "Math trigonometry";
         $this->field = $data['field'];
         $this->interpreterText = $this->field . "<br>";
     }
@@ -956,6 +998,7 @@ class BlockMathOnList extends Block {
 
     function __construct($data) {
         parent::__construct($data);
+        $this->alias = "Math min/max";
         $this->field = $data['field'];
         $this->interpreterText = $this->field . "<br>";
     }
@@ -980,6 +1023,7 @@ class BlockMathRandomInt extends Block {
 
     function __construct($data) {
         parent::__construct($data);
+        $this->alias = "Math random int";
         $this->interpreterText = "<b>Random int</b>:<br>";
     }
 
@@ -995,6 +1039,7 @@ class BlockMathRandomFloat extends Block {
 
     function __construct($data) {
         parent::__construct($data);
+        $this->alias = "Math random float";
         $this->interpreterText = "<b>Random float</b>:<br>";
     }
 
@@ -1012,6 +1057,7 @@ class BlockLogicBoolean extends Block {
 
     function __construct($data) {
         parent::__construct($data);
+        $this->alias = "Logic boolean";
         $this->field = ($data['field'] == "FALSE" ? false : true);
         $this->interpreterText = "[GET] <b>" . $this->field . "</b> (bool)<br>";
     }
@@ -1032,6 +1078,7 @@ class BlockLogicOperation extends Block {
 
     function __construct($data) {
         parent::__construct($data);
+        $this->alias = "Logic operation";
         $this->field = $data['field'];
         $this->interpreterText = "Logic operation <b>" . $this->field . "</b><br>";
     }
@@ -1057,6 +1104,7 @@ class BlockLogicFalse extends Block {
 
     function __construct($data) {
         parent::__construct($data);
+        $this->alias = "Logic false";
         $this->field = ($data['field'] == "FALSE" ? false : true);
         $this->interpreterText = "<b>" . $this->field . "</b> (bool)<br>";
     }
@@ -1075,6 +1123,7 @@ class BlockLogicNegate extends Block {
 
     function __construct($data) {
         parent::__construct($data);
+        $this->alias = "Logic negate";
         $this->interpreterText = "<b>!</b> ";
     }
 
@@ -1088,6 +1137,7 @@ class BlockLogicOr extends Block {
 
     function __construct($data) {
         parent::__construct($data);
+        $this->alias = "Logic or";
         $this->interpreterText = "<b>||</b><br>";
     }
 
@@ -1104,6 +1154,7 @@ class BlockLogicCompare extends Block {
 
     function __construct($data) {
         parent::__construct($data);
+        $this->alias = "Logic compare";
         $this->field = $data['field'];
         $this->interpreterText = "Comparing <b>" . $this->map[$this->field] . "</b><br>";
     }
@@ -1126,6 +1177,7 @@ class BlockGlobalDeclaration extends Block {
 
     function __construct($data) {
         parent::__construct($data);
+        $this->alias = "Variable global declaration";
         $this->field = $data['field'];
         $this->interpreterText = "Declaring <b>global variable</b> key: <b>" . $this->field . "</b> value: ";
     }
@@ -1147,6 +1199,7 @@ class BlockLexicalVariableSet extends Block {
 
     function __construct($data) {
         parent::__construct($data);
+        $this->alias = "Variable set";
         $this->field = $data['field'];
         $this->interpreterText = "Setting <b>variable</b> key: <b>" . $this->field . "</b> value: ";
     }
@@ -1168,6 +1221,7 @@ class BlockLexicalVariableGet extends Block {
 
     function __construct($data) {
         parent::__construct($data);
+        $this->alias = "Variable get";
         $this->field = $data['field'];
         $this->interpreterText = "Getting <b>variable</b> key: <b>" . $this->field . "</b> value: ";
     }
@@ -1189,6 +1243,7 @@ class BlockLocalDeclarationStatement extends Block {
 
     function __construct($data) {
         parent::__construct($data);
+        $this->alias = "Variable local declaration (statement)";
         $this->field = $data['field'];
         $this->interpreterText = "Declaring local variable" . ($this->hasMoreVariablesThanOne() ? "s" : "") . "<br>";
     }
@@ -1236,6 +1291,7 @@ class BlockLocalDeclarationExpression extends Block {
 
     function __construct($data) {
         parent::__construct($data);
+        $this->alias = "Variable local declaration (expression)";
         $this->field = $data['field'];
         $this->interpreterText = "Declaring local variable" . ($this->hasMoreVariablesThanOne() ? "s" : "") . "<br>";
     }
@@ -1281,6 +1337,7 @@ class BlockControlsDoThenReturn extends Block {
 
     function __construct($data) {
         parent::__construct($data);
+        $this->alias = "Controls do then return";
         $this->interpreterText = "Evaluating <b>do then return</b><br>";
     }
 
@@ -1300,6 +1357,7 @@ class BlockControlsForRange extends Block {
 
     function __construct($data) {
         parent::__construct($data);
+        $this->alias = "Controls for range";
         $this->interpreterText = "Evaluating <b>foreach</b><br>";
     }
 
@@ -1326,6 +1384,7 @@ class BlockControlsIf extends Block {
 
     function __construct($data) {
         parent::__construct($data);
+        $this->alias = "Controls if";
         $this->elseifCount = isset($data['elseif']) ? $data['elseif'] : 0;
         $this->elseCount = isset($data['else']) ? $data['else'] : 0;
         $this->interpreterText = "Evaluating <b>if controls</b><br>";
@@ -1393,6 +1452,7 @@ class BlockListsCreate extends Block {
 
     function __construct($data) {
         parent::__construct($data);
+        $this->alias = "List create";
         $this->items = $data['items'];
         $this->interpreterText = "Creating list<br>";
     }
@@ -1413,6 +1473,7 @@ class BlockListsAddItems extends Block {
 
     function __construct($data) {
         parent::__construct($data);
+        $this->alias = "List add items";
         $this->items = $data['items'];
         $this->interpreterText = "Adding items to list<br>";
     }
