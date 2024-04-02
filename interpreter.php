@@ -8,11 +8,11 @@ class Interpreter {
         $this->project = $project;
     }
 
-    public function run() {
+    public function run(array $ruleSets = null) {
         $this->project->setInterpreter($this);
         $count = 0;
         $this->initialize($count);
-        //$this->interpretBasedOnRules();
+        //$this->interpretBasedOnRules($ruleSets);
         $this->interpretAll($count);
     }
 
@@ -44,7 +44,10 @@ class Interpreter {
         }
     }
 
-    private function interpretBasedOnRules() {
+    private function interpretBasedOnRules(array $ruleSets) {
+        foreach($ruleSets as $ruleSet) {
+            
+        }
     }
 
     private function interpretAll($count) {

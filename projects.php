@@ -3,17 +3,27 @@
 class Project {
 
     private ?Interpreter $interpreter = null;
+    private ?String $fileName;
     private ?String $projectName;
     private array $components;
     private array $blocks;
     private array $variables;
 
-    function __construct($projectName, $components, $blocks, $variables = array()) {
+    function __construct($fileName, $projectName, $components, $blocks, $variables = array()) {
+        $this->fileName = $fileName;
         $this->projectName = $projectName;
         $this->components = $components;
         $this->blocks = $blocks;
         $this->variables = $variables;
         $this->addProjectReferenceToChildren();
+    }
+
+    public function getFileName() {
+        return $this->fileName;
+    }
+
+    public function getProjectName() {
+        return $this->projectName;
     }
 
     public function getComponents(): array {
@@ -62,6 +72,17 @@ class Project {
         return null;
     }
 
+    public function getEvents(): array {
+        $array = array();
+        foreach($this->blocks as $block) {
+            if($block->getType() == "component_event") {
+                $array[] = $block;
+            }
+        }
+        ksort($array);
+        return $array;
+    }
+
     public function getStartingBlocks(): array {
         $startingBlocks = array();
         foreach ($this->blocks as $block) {
@@ -85,6 +106,32 @@ class Project {
 
     public function setInterpreter($interpreter): void {
         $this->interpreter = $interpreter;
+    }
+
+    public function getComponentsTypeCount(): array {
+        $count = array();
+        foreach($this->components as $component) {
+            if(isset($count[$component->getType()])) {
+                $count[$component->getType()]++;
+            } else {
+                $count[$component->getType()] = 1;
+            }
+        }
+        ksort($count);
+        return $count;
+    }
+
+    public function getBlocksTypeCount(): array {
+        $count = array();
+        foreach($this->blocks as $block) {
+            if(isset($count[$block->getAlias()])) {
+                $count[$block->getAlias()]++;
+            } else {
+                $count[$block->getAlias()] = 1;
+            }
+        }
+        ksort($count);
+        return $count;
     }
 
     public function info(): void {
@@ -173,7 +220,11 @@ class Project {
 abstract class ProjectHandler {
 
     static function discoverAiaProjects(): array {
-        return ProjectHandler::searchFilesByExtension("./projects/", "aia");
+        try {
+            return ProjectHandler::searchFilesByExtension($_SERVER['DOCUMENT_ROOT'] . "/projectsUpload/" . session_id() . "/", "aia");
+        } catch(Exception $e) {
+            return array();
+        }
     }
 
     static function loadProject($aiaProjectPath): Project {
@@ -182,7 +233,7 @@ abstract class ProjectHandler {
         $projectName = ProjectHandler::extractProjectMetadata($loadedProjectFiles);
         $components = ProjectHandler::processComponents($loadedProjectFiles);
         $blocks = ProjectHandler::processBlocks($loadedProjectFiles['bky']);
-        return new Project($projectName, $components, $blocks);
+        return new Project(pathinfo($aiaProjectPath, PATHINFO_FILENAME), $projectName, $components, $blocks);
     }
 
     static function extractProjectMetadata($loadedProjectFiles): ?String {
@@ -542,7 +593,7 @@ abstract class ProjectHandler {
 
     //Clear tmp folder
     static function clearTmp(): void {
-        ProjectHandler::rrmdir('tmp');
+        ProjectHandler::rrmdir($_SERVER['DOCUMENT_ROOT'] . "/tmp/" . session_id());
     }
 
     //Delete specific folder
@@ -580,11 +631,20 @@ abstract class ProjectHandler {
         return $fileList;
     }
 
+    static function getFilenameWithoutExtension($filePath) {
+        $filenameWithExtension = basename($filePath);
+        $filenameWithoutExtension = pathinfo($filenameWithExtension, PATHINFO_FILENAME);
+        
+        return $filenameWithoutExtension;
+    }
+
     //Unzip specific project to selected folder
-    static function unzipProject(String $filename, String $pathTo = './tmp'): void {
+    static function unzipProject(String $filePath): void {
+        $filename = ProjectHandler::getFilenameWithoutExtension($filePath);
+        $pathTo = $_SERVER['DOCUMENT_ROOT'] . "/tmp/" . session_id();
         ProjectHandler::clearTmp();
         $zip = new ZipArchive;
-        $zip->open($filename);
+        $zip->open($filePath);
         $zip->extractTo($pathTo);
     }
 
@@ -599,7 +659,7 @@ abstract class ProjectHandler {
 
         $projectFiles = array();
 
-        $filesFound = ProjectHandler::searchFilesByExtension("./tmp", "scm");
+        $filesFound = ProjectHandler::searchFilesByExtension($_SERVER['DOCUMENT_ROOT'] . "/tmp", "scm");
         foreach ($filesFound as $file) {
             $handle = fopen($file, "r");
             $readText = "";
@@ -619,7 +679,7 @@ abstract class ProjectHandler {
 
         $projectFiles = array();
 
-        $filesFound = ProjectHandler::searchFilesByExtension("./tmp", "bky");
+        $filesFound = ProjectHandler::searchFilesByExtension($_SERVER['DOCUMENT_ROOT'] . "/tmp", "bky");
         foreach ($filesFound as $file) {
             $handle = fopen($file, "r");
             $readText = "";

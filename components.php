@@ -175,7 +175,7 @@ class ComponentSound extends BaseComponent {
     function __construct($data) {
         parent::__construct($data);
         $this->properties['MinimumInterval'] = (isset($data['MinimumInterval']) ? intval($data['MinimumInterval']) : 500);
-        $this->properties['Source'] = $data['Source'];
+        $this->properties['Source'] = (isset($data['Source']) ? $data['Source'] : null);
     }
 }
 
