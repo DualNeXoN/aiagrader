@@ -73,10 +73,14 @@ class Project {
     }
 
     public function getEvents(): array {
-        $array = array();
+        $array = [];
         foreach($this->blocks as $block) {
             if($block->getType() == "component_event") {
-                $array[$block->getInstanceName()] = $block;
+                $instanceName = $block->getInstanceName();
+                if(!isset($array[$instanceName])) {
+                    $array[$instanceName] = [];
+                }
+                $array[$instanceName][] = $block;
             }
         }
         ksort($array);

@@ -79,10 +79,12 @@
                                                             <tbody>
                                                                 <?php
                                                                 foreach ($project->getEvents() as $event) {
-                                                                    echo "<tr>";
-                                                                    echo "<td>" . $event->getInstanceName() . "</td>";
-                                                                    echo "<td>" . $event->getEventName() . "</td>";
-                                                                    echo "</tr>";
+                                                                    foreach($event as $block) {
+                                                                        echo "<tr>";
+                                                                        echo "<td>" . $block->getInstanceName() . "</td>";
+                                                                        echo "<td>" . $block->getEventName() . "</td>";
+                                                                        echo "</tr>";
+                                                                    }
                                                                 } ?>
                                                             </tbody>
                                                         </table>
