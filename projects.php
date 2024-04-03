@@ -2,6 +2,9 @@
 
 class Project {
 
+    private bool $evaluated = false;
+    private bool $runnable = false;
+
     private ?Interpreter $interpreter = null;
     private ?String $fileName;
     private ?String $projectName;
@@ -16,6 +19,22 @@ class Project {
         $this->blocks = $blocks;
         $this->variables = $variables;
         $this->addProjectReferenceToChildren();
+    }
+
+    public function isEvaluated(): bool {
+        return $this->evaluated;
+    }
+
+    public function setEvaluated(bool $evaluated): void {
+        $this->evaluated = $evaluated;
+    }
+
+    public function isRunnable(): bool {
+        return $this->runnable;
+    }
+
+    public function setRunnable(bool $runnable): void {
+        $this->runnable = $runnable;
     }
 
     public function getFileName() {
@@ -74,10 +93,10 @@ class Project {
 
     public function getEvents(): array {
         $array = [];
-        foreach($this->blocks as $block) {
-            if($block->getType() == "component_event") {
+        foreach ($this->blocks as $block) {
+            if ($block->getType() == "component_event") {
                 $instanceName = $block->getInstanceName();
-                if(!isset($array[$instanceName])) {
+                if (!isset($array[$instanceName])) {
                     $array[$instanceName] = [];
                 }
                 $array[$instanceName][] = $block;
@@ -114,8 +133,8 @@ class Project {
 
     public function getComponentsTypeCount(): array {
         $count = array();
-        foreach($this->components as $component) {
-            if(isset($count[$component->getType()])) {
+        foreach ($this->components as $component) {
+            if (isset($count[$component->getType()])) {
                 $count[$component->getType()]++;
             } else {
                 $count[$component->getType()] = 1;
@@ -127,8 +146,8 @@ class Project {
 
     public function getBlocksTypeCount(): array {
         $count = array();
-        foreach($this->blocks as $block) {
-            if(isset($count[$block->getAlias()])) {
+        foreach ($this->blocks as $block) {
+            if (isset($count[$block->getAlias()])) {
                 $count[$block->getAlias()]++;
             } else {
                 $count[$block->getAlias()] = 1;
@@ -223,10 +242,14 @@ class Project {
 
 abstract class ProjectHandler {
 
+    static function saveProject(Project $project): void {
+        $_SESSION['projects'][$project->getFileName()] = serialize($project);
+    }
+
     static function discoverAiaProjects(): array {
         try {
             return ProjectHandler::searchFilesByExtension($_SERVER['DOCUMENT_ROOT'] . "/projectsUpload/" . session_id() . "/", "aia");
-        } catch(Exception $e) {
+        } catch (Exception $e) {
             return array();
         }
     }
@@ -341,19 +364,19 @@ abstract class ProjectHandler {
             $codeArraySorter = -1;
             for ($v = $i; $v < count($blocks); $v++) {
                 $nextBlock = $blocks[$v];
-                if($nextBlock->getParent() == $controlsBlock) {
-                    if($conditionsProcessed < $conditionsCount) {
+                if ($nextBlock->getParent() == $controlsBlock) {
+                    if ($conditionsProcessed < $conditionsCount) {
                         $controlsBlock->addCondition($nextBlock);
                         $conditionsProcessed++;
                     } else {
-                        if(isset($nextBlock->getMetadata()['name']) && (str_starts_with($nextBlock->getMetadata()['name'], "DO") || $nextBlock->getMetadata()['name'] == "ELSE")) {
+                        if (isset($nextBlock->getMetadata()['name']) && (str_starts_with($nextBlock->getMetadata()['name'], "DO") || $nextBlock->getMetadata()['name'] == "ELSE")) {
                             $codeArraySorter++;
                         }
                         $controlsBlock->addCode($codeArraySorter, $nextBlock);
                     }
                 }
             }
-            if($controlsBlock->getElseCount() > 0) {
+            if ($controlsBlock->getElseCount() > 0) {
                 $controlsBlock->addCondition(null);
             }
         }
@@ -483,7 +506,7 @@ abstract class ProjectHandler {
             case "lists_add_items":
                 return new BlockListsAddItems($blockData);
             case "color_make_color":
-                return new BlockColorMakeColor($blockData);                
+                return new BlockColorMakeColor($blockData);
         }
 
         if (str_starts_with($blockData['type'], "color_")) {
@@ -638,7 +661,7 @@ abstract class ProjectHandler {
     static function getFilenameWithoutExtension($filePath) {
         $filenameWithExtension = basename($filePath);
         $filenameWithoutExtension = pathinfo($filenameWithExtension, PATHINFO_FILENAME);
-        
+
         return $filenameWithoutExtension;
     }
 

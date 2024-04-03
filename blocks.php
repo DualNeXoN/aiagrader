@@ -2,6 +2,66 @@
 
 class Block {
 
+    const BLOCK_ALIASES = [
+        "Undefined block",
+        "Event",
+        "Method",
+        "Void procedure definition",
+        "No-void procedure definition",
+        "Call void procedure",
+        "Call no-void procedure",
+        "Setter/Getter",
+        "Component field",
+        "Text",
+        "Text join",
+        "Text length",
+        "Text starts at",
+        "Text contains",
+        "Text replace all",
+        "Text reverse",
+        "Text change case",
+        "Text compare",
+        "Text is empty",
+        "Color",
+        "Make color",
+        "Number",
+        "Math add",
+        "Math subtract",
+        "Math multiply",
+        "Math power",
+        "Math bitwise",
+        "Math compare",
+        "Math function (ROOT/ABS/NEG/LN/...)",
+        "Math division (classic)",
+        "Math division (modulo/remainder/quotient)",
+        "Math angle convert",
+        "Math is number",
+        "Math convert number",
+        "Math radix",
+        "Math format to decimal",
+        "Math atan2",
+        "Math trigonometry",
+        "Math min/max",
+        "Math random int",
+        "Math random float",
+        "Logic boolean",
+        "Logic operation",
+        "Logic false",
+        "Logic negate",
+        "Logic or",
+        "Logic compare",
+        "Variable global declaration",
+        "Variable set",
+        "Variable get",
+        "Variable local declaration (statement)",
+        "Variable local declaration (expression)",
+        "Controls do then return",
+        "Controls for range",
+        "Controls if",
+        "List create",
+        "List add items",
+    ];
+
     protected ?Project $project = null;
     protected String $id;
     protected String $type;
@@ -107,7 +167,11 @@ class Block {
     }
 
     public function evaluate() {
-        $this->evaluateEcho($this->interpreterText);
+        try {
+            $this->evaluateEcho($this->interpreterText);
+        } catch (Throwable $e) {
+            throw new Exception("Evaluation error");
+        }
     }
 }
 
@@ -139,9 +203,13 @@ class BlockComponentEvent extends Block {
     }
 
     public function evaluate() {
-        parent::evaluate();
-        foreach ($this->child as $child) {
-            $child->evaluate();
+        try {
+            parent::evaluate();
+            foreach ($this->child as $child) {
+                $child->evaluate();
+            }
+        } catch (Throwable $e) {
+            throw new Exception("Evaluation error");
         }
     }
 }
@@ -174,16 +242,20 @@ class BlockComponentMethod extends Block {
     }
 
     public function evaluate() {
-        parent::evaluate();
-        $args = null;
-        foreach ($this->child as $child) {
-            $args[] = $child->evaluate();
-        }
-        $component = $this->project->getComponentByName($this->instanceName);
-        if (method_exists($component, $this->methodName)) {
-            call_user_func_array(array($component, $this->methodName), $args);
-        } else {
-            $this->evaluateEcho("<text style=\"color: yellow\">Unsupported method <b>" . $this->methodName . "</b> of component <b>" . $this->componentType . "</b></text><br>");
+        try {
+            parent::evaluate();
+            $args = null;
+            foreach ($this->child as $child) {
+                $args[] = $child->evaluate();
+            }
+            $component = $this->project->getComponentByName($this->instanceName);
+            if (method_exists($component, $this->methodName)) {
+                call_user_func_array(array($component, $this->methodName), $args);
+            } else {
+                $this->evaluateEcho("<text style=\"color: yellow\">Unsupported method <b>" . $this->methodName . "</b> of component <b>" . $this->componentType . "</b></text><br>");
+            }
+        } catch (Throwable $e) {
+            throw new Exception("Evaluation error");
         }
     }
 }
@@ -215,23 +287,27 @@ class BlockProceduresDefnoreturn extends Block {
     }
 
     public function evaluate($args = array()) {
-        parent::evaluate();
+        try {
+            parent::evaluate();
 
-        if (count($this->vars) > 0) {
-            $this->evaluateEcho("Declaring local variable" . ($this->hasMoreVariablesThanOne() ? "s" : "") . "<br>");
-            for ($i = 0; $i < count($this->vars); $i++) {
-                $this->project->setVariable($this->vars[$i], $args[$i]);
-                $this->evaluateEcho("Local variable <b>" . $this->vars[$i] . "</b> set to <b>" . (is_array($this->project->getVariable($this->vars[$i])) ? "[" . implode(' ', $this->project->getVariable($this->vars[$i])) . "]" : $this->project->getVariable($this->vars[$i])) . "</b><br>");
+            if (count($this->vars) > 0) {
+                $this->evaluateEcho("Declaring local variable" . ($this->hasMoreVariablesThanOne() ? "s" : "") . "<br>");
+                for ($i = 0; $i < count($this->vars); $i++) {
+                    $this->project->setVariable($this->vars[$i], $args[$i]);
+                    $this->evaluateEcho("Local variable <b>" . $this->vars[$i] . "</b> set to <b>" . (is_array($this->project->getVariable($this->vars[$i])) ? "[" . implode(' ', $this->project->getVariable($this->vars[$i])) . "]" : $this->project->getVariable($this->vars[$i])) . "</b><br>");
+                }
             }
-        }
 
-        foreach ($this->child as $child) {
-            $child->evaluate();
-        }
+            foreach ($this->child as $child) {
+                $child->evaluate();
+            }
 
-        for ($i = 0; $i < count($this->vars); $i++) {
-            $this->project->removeVariable($this->vars[$i]);
-            $this->evaluateEcho("Variable <b>" . $this->vars[$i] . "</b> cleared<br>");
+            for ($i = 0; $i < count($this->vars); $i++) {
+                $this->project->removeVariable($this->vars[$i]);
+                $this->evaluateEcho("Variable <b>" . $this->vars[$i] . "</b> cleared<br>");
+            }
+        } catch (Throwable $e) {
+            throw new Exception("Evaluation error");
         }
     }
 }
@@ -252,8 +328,12 @@ class BlockProceduresDefreturn extends Block {
     }
 
     public function evaluate(): mixed {
-        parent::evaluate();
-        return $this->child[0]->evaluate();
+        try {
+            parent::evaluate();
+            return $this->child[0]->evaluate();
+        } catch (Throwable $e) {
+            throw new Exception("Evaluation error");
+        }
     }
 }
 
@@ -273,12 +353,16 @@ class BlockProceduresCallnoreturn extends Block {
     }
 
     public function evaluate() {
-        parent::evaluate();
-        $args = array();
-        foreach ($this->child as $arg) {
-            $args[] = $arg->evaluate();
+        try {
+            parent::evaluate();
+            $args = array();
+            foreach ($this->child as $arg) {
+                $args[] = $arg->evaluate();
+            }
+            $this->project->getDefinedFunction($this->field)->evaluate($args);
+        } catch (Throwable $e) {
+            throw new Exception("Evaluation error");
         }
-        $this->project->getDefinedFunction($this->field)->evaluate($args);
     }
 }
 
@@ -298,8 +382,12 @@ class BlockProceduresCallreturn extends Block {
     }
 
     public function evaluate() {
-        parent::evaluate();
-        return $this->project->getDefinedFunction($this->field)->evaluate();
+        try {
+            parent::evaluate();
+            return $this->project->getDefinedFunction($this->field)->evaluate();
+        } catch (Throwable $e) {
+            throw new Exception("Evaluation error");
+        }
     }
 }
 
@@ -341,11 +429,15 @@ class BlockComponentSetGet extends Block {
     }
 
     public function evaluate() {
-        parent::evaluate();
-        if ($this->setOrGet === "get") {
-            return $this->project->getComponentByName($this->instanceName)->getProperty($this->propertyName);
-        } else {
-            $this->project->getComponentByName($this->instanceName)->setProperty($this->propertyName, $this->child[0]->evaluate());
+        try {
+            parent::evaluate();
+            if ($this->setOrGet === "get") {
+                return $this->project->getComponentByName($this->instanceName)->getProperty($this->propertyName);
+            } else {
+                $this->project->getComponentByName($this->instanceName)->setProperty($this->propertyName, $this->child[0]->evaluate());
+            }
+        } catch (Throwable $e) {
+            throw new Exception("Evaluation error");
         }
     }
 }
@@ -366,11 +458,15 @@ class BlockComponentComponentBlock extends Block {
     }
 
     public function evaluate() {
-        parent::evaluate();
-        foreach ($this->child as $child) {
-            $child->evaluate();
+        try {
+            parent::evaluate();
+            foreach ($this->child as $child) {
+                $child->evaluate();
+            }
+            return $this->field;
+        } catch (Throwable $e) {
+            throw new Exception("Evaluation error");
         }
-        return $this->field;
     }
 }
 
@@ -390,11 +486,15 @@ class BlockText extends Block {
     }
 
     public function evaluate() {
-        parent::evaluate();
-        foreach ($this->child as $child) {
-            $child->evaluate();
+        try {
+            parent::evaluate();
+            foreach ($this->child as $child) {
+                $child->evaluate();
+            }
+            return $this->field;
+        } catch (Throwable $e) {
+            throw new Exception("Evaluation error");
         }
-        return $this->field;
     }
 }
 
@@ -407,12 +507,16 @@ class BlockTextJoin extends Block {
     }
 
     public function evaluate() {
-        parent::evaluate();
-        $result = "";
-        foreach ($this->child as $child) {
-            $result = $result . $child->evaluate();
+        try {
+            parent::evaluate();
+            $result = "";
+            foreach ($this->child as $child) {
+                $result = $result . $child->evaluate();
+            }
+            return $result;
+        } catch (Throwable $e) {
+            throw new Exception("Evaluation error");
         }
-        return $result;
     }
 }
 
@@ -425,8 +529,12 @@ class BlockTextLength extends Block {
     }
 
     public function evaluate() {
-        parent::evaluate();
-        return strlen($this->child[0]->evaluate());
+        try {
+            parent::evaluate();
+            return strlen($this->child[0]->evaluate());
+        } catch (Throwable $e) {
+            throw new Exception("Evaluation error");
+        }
     }
 }
 
@@ -439,15 +547,19 @@ class BlockTextStartsAt extends Block {
     }
 
     public function evaluate() {
-        parent::evaluate();
-        $position = strpos($this->child[0]->evaluate(), $this->child[1]->evaluate());
-        if ($position === false) {
-            $position = 0;
-        } else {
-            $position += 1;
-        }
+        try {
+            parent::evaluate();
+            $position = strpos($this->child[0]->evaluate(), $this->child[1]->evaluate());
+            if ($position === false) {
+                $position = 0;
+            } else {
+                $position += 1;
+            }
 
-        return $position;
+            return $position;
+        } catch (Throwable $e) {
+            throw new Exception("Evaluation error");
+        }
     }
 }
 
@@ -463,10 +575,14 @@ class BlockTextContains extends Block {
     }
 
     public function evaluate() {
-        parent::evaluate();
-        if ($this->field == "CONTAINS") return str_contains($this->child[0]->evaluate(), $this->child[1]->evaluate());
-        $this->evaluateEcho("<div style=\"color:yellow\">BlockTextContains unimplemented mode (" . $this->field . "). Returning false</div>");
-        return false;
+        try {
+            parent::evaluate();
+            if ($this->field == "CONTAINS") return str_contains($this->child[0]->evaluate(), $this->child[1]->evaluate());
+            $this->evaluateEcho("<div style=\"color:yellow\">BlockTextContains unimplemented mode (" . $this->field . "). Returning false</div>");
+            return false;
+        } catch (Throwable $e) {
+            throw new Exception("Evaluation error");
+        }
     }
 }
 
@@ -481,8 +597,12 @@ class BlockTextReplaceAll extends Block {
     }
 
     public function evaluate() {
-        parent::evaluate();
-        return str_replace($this->child[1]->evaluate(), $this->child[2]->evaluate(), $this->child[0]->evaluate());
+        try {
+            parent::evaluate();
+            return str_replace($this->child[1]->evaluate(), $this->child[2]->evaluate(), $this->child[0]->evaluate());
+        } catch (Throwable $e) {
+            throw new Exception("Evaluation error");
+        }
     }
 }
 
@@ -495,8 +615,12 @@ class BlockTextReverse extends Block {
     }
 
     public function evaluate() {
-        parent::evaluate();
-        return strrev($this->child[0]->evaluate());
+        try {
+            parent::evaluate();
+            return strrev($this->child[0]->evaluate());
+        } catch (Throwable $e) {
+            throw new Exception("Evaluation error");
+        }
     }
 }
 
@@ -512,9 +636,13 @@ class BlockTextChangeCase extends Block {
     }
 
     public function evaluate() {
-        parent::evaluate();
-        if ($this->field == "UPCASE") return strtoupper($this->child[0]->evaluate());
-        else return strtolower($this->child[0]->evaluate());
+        try {
+            parent::evaluate();
+            if ($this->field == "UPCASE") return strtoupper($this->child[0]->evaluate());
+            else return strtolower($this->child[0]->evaluate());
+        } catch (Throwable $e) {
+            throw new Exception("Evaluation error");
+        }
     }
 }
 
@@ -531,18 +659,22 @@ class BlockTextCompare extends Block {
     }
 
     public function evaluate(): int {
-        parent::evaluate();
-        switch ($this->map[$this->field]) {
-            case '<':
-                return strnatcmp($this->child[0]->evaluate(), $this->child[1]->evaluate()) == -1;
-            case '>':
-                return strnatcmp($this->child[0]->evaluate(), $this->child[1]->evaluate()) == 1;
-            case '=':
-                return strnatcmp($this->child[0]->evaluate(), $this->child[1]->evaluate()) == 0;
-            case '!=':
-                return strnatcmp($this->child[0]->evaluate(), $this->child[1]->evaluate()) != 0;
+        try {
+            parent::evaluate();
+            switch ($this->map[$this->field]) {
+                case '<':
+                    return strnatcmp($this->child[0]->evaluate(), $this->child[1]->evaluate()) == -1;
+                case '>':
+                    return strnatcmp($this->child[0]->evaluate(), $this->child[1]->evaluate()) == 1;
+                case '=':
+                    return strnatcmp($this->child[0]->evaluate(), $this->child[1]->evaluate()) == 0;
+                case '!=':
+                    return strnatcmp($this->child[0]->evaluate(), $this->child[1]->evaluate()) != 0;
+            }
+            return false;
+        } catch (Throwable $e) {
+            throw new Exception("Evaluation error");
         }
-        return false;
     }
 }
 
@@ -555,8 +687,12 @@ class BlockTextIsEmpty extends Block {
     }
 
     public function evaluate() {
-        parent::evaluate();
-        return empty($this->child[0]->evaluate());
+        try {
+            parent::evaluate();
+            return empty($this->child[0]->evaluate());
+        } catch (Throwable $e) {
+            throw new Exception("Evaluation error");
+        }
     }
 }
 
@@ -576,11 +712,15 @@ class BlockColor extends Block {
     }
 
     public function evaluate() {
-        parent::evaluate();
-        foreach ($this->child as $child) {
-            $child->evaluate();
+        try {
+            parent::evaluate();
+            foreach ($this->child as $child) {
+                $child->evaluate();
+            }
+            return $this->field;
+        } catch (Throwable $e) {
+            throw new Exception("Evaluation error");
         }
-        return $this->field;
     }
 }
 
@@ -600,17 +740,21 @@ class BlockColorMakeColor extends Block {
         $alphaHex = dechex((int) round($alpha * 255));
         return sprintf("#%02x%02x%02x%02x", $red, $green, $blue, $alphaHex);
     }
-    
+
 
     public function evaluate() {
-        parent::evaluate();
-        $list = $this->child[0]->evaluate();
-        if(count($list) == 3) {
-            return $this->rgbToHex($list[0], $list[1], $list[2]);
-        } else if(count($list) == 4) {
-            return $this->rgbaToHex($list[0], $list[1], $list[2], $list[3]);
+        try {
+            parent::evaluate();
+            $list = $this->child[0]->evaluate();
+            if (count($list) == 3) {
+                return $this->rgbToHex($list[0], $list[1], $list[2]);
+            } else if (count($list) == 4) {
+                return $this->rgbaToHex($list[0], $list[1], $list[2], $list[3]);
+            }
+            return null;
+        } catch (Throwable $e) {
+            throw new Exception("Evaluation error");
         }
-        return null;
     }
 }
 
@@ -630,8 +774,12 @@ class BlockMathNumber extends Block {
     }
 
     public function evaluate(): mixed {
-        parent::evaluate();
-        return $this->field;
+        try {
+            parent::evaluate();
+            return $this->field;
+        } catch (Throwable $e) {
+            throw new Exception("Evaluation error");
+        }
     }
 }
 
@@ -644,12 +792,16 @@ class BlockMathAdd extends Block {
     }
 
     public function evaluate(): int {
-        parent::evaluate();
-        $result = $this->child[0]->evaluate();
-        for ($i = 1; $i < count($this->child); $i++) {
-            $result = $result + $this->child[$i]->evaluate();
+        try {
+            parent::evaluate();
+            $result = $this->child[0]->evaluate();
+            for ($i = 1; $i < count($this->child); $i++) {
+                $result = $result + $this->child[$i]->evaluate();
+            }
+            return $result;
+        } catch (Throwable $e) {
+            throw new Exception("Evaluation error");
         }
-        return $result;
     }
 }
 
@@ -662,9 +814,13 @@ class BlockMathSubtract extends Block {
     }
 
     public function evaluate(): int {
-        parent::evaluate();
-        $result = $this->child[0]->evaluate() - $this->child[1]->evaluate();
-        return $result;
+        try {
+            parent::evaluate();
+            $result = $this->child[0]->evaluate() - $this->child[1]->evaluate();
+            return $result;
+        } catch (Throwable $e) {
+            throw new Exception("Evaluation error");
+        }
     }
 }
 
@@ -677,12 +833,16 @@ class BlockMathMultiply extends Block {
     }
 
     public function evaluate(): int {
-        parent::evaluate();
-        $result = $this->child[0]->evaluate();
-        for ($i = 1; $i < count($this->child); $i++) {
-            $result = $result * $this->child[$i]->evaluate();
+        try {
+            parent::evaluate();
+            $result = $this->child[0]->evaluate();
+            for ($i = 1; $i < count($this->child); $i++) {
+                $result = $result * $this->child[$i]->evaluate();
+            }
+            return $result;
+        } catch (Throwable $e) {
+            throw new Exception("Evaluation error");
         }
-        return $result;
     }
 }
 
@@ -695,9 +855,13 @@ class BlockMathPower extends Block {
     }
 
     public function evaluate(): int {
-        parent::evaluate();
-        $result = pow($this->child[0]->evaluate(), $this->child[1]->evaluate());
-        return $result;
+        try {
+            parent::evaluate();
+            $result = pow($this->child[0]->evaluate(), $this->child[1]->evaluate());
+            return $result;
+        } catch (Throwable $e) {
+            throw new Exception("Evaluation error");
+        }
     }
 }
 
@@ -714,22 +878,26 @@ class BlockMathBitwise extends Block {
     }
 
     public function evaluate() {
-        parent::evaluate();
-        $result = $this->child[0]->evaluate();
-        for ($i = 1; $i < count($this->child); $i++) {
-            switch ($this->map[$this->field]) {
-                case '&':
-                    $result &= $this->child[$i]->evaluate();
-                    break;
-                case '|':
-                    $result |= $this->child[$i]->evaluate();
-                    break;
-                case '^':
-                    $result ^= $this->child[$i]->evaluate();
-                    break;
+        try {
+            parent::evaluate();
+            $result = $this->child[0]->evaluate();
+            for ($i = 1; $i < count($this->child); $i++) {
+                switch ($this->map[$this->field]) {
+                    case '&':
+                        $result &= $this->child[$i]->evaluate();
+                        break;
+                    case '|':
+                        $result |= $this->child[$i]->evaluate();
+                        break;
+                    case '^':
+                        $result ^= $this->child[$i]->evaluate();
+                        break;
+                }
             }
+            return $result;
+        } catch (Throwable $e) {
+            throw new Exception("Evaluation error");
         }
-        return $result;
     }
 }
 
@@ -746,22 +914,26 @@ class BlockMathCompare extends Block {
     }
 
     public function evaluate(): bool {
-        parent::evaluate();
-        switch ($this->map[$this->field]) {
-            case '>':
-                return $this->child[0]->evaluate() > $this->child[1]->evaluate();
-            case '<':
-                return $this->child[0]->evaluate() < $this->child[1]->evaluate();
-            case '=':
-                return $this->child[0]->evaluate() == $this->child[1]->evaluate();
-            case '!=':
-                return $this->child[0]->evaluate() != $this->child[1]->evaluate();
-            case '<=':
-                return $this->child[0]->evaluate() <= $this->child[1]->evaluate();
-            case '>=':
-                return $this->child[0]->evaluate() >= $this->child[1]->evaluate();
+        try {
+            parent::evaluate();
+            switch ($this->map[$this->field]) {
+                case '>':
+                    return $this->child[0]->evaluate() > $this->child[1]->evaluate();
+                case '<':
+                    return $this->child[0]->evaluate() < $this->child[1]->evaluate();
+                case '=':
+                    return $this->child[0]->evaluate() == $this->child[1]->evaluate();
+                case '!=':
+                    return $this->child[0]->evaluate() != $this->child[1]->evaluate();
+                case '<=':
+                    return $this->child[0]->evaluate() <= $this->child[1]->evaluate();
+                case '>=':
+                    return $this->child[0]->evaluate() >= $this->child[1]->evaluate();
+            }
+            return false;
+        } catch (Throwable $e) {
+            throw new Exception("Evaluation error");
         }
-        return false;
     }
 }
 
@@ -777,26 +949,30 @@ class BlockMathSingle extends Block {
     }
 
     public function evaluate(): mixed {
-        parent::evaluate();
-        switch ($this->field) {
-            case 'ROOT':
-                return sqrt($this->child[0]->evaluate());
-            case 'ABS':
-                return abs($this->child[0]->evaluate());
-            case 'NEG':
-                return -$this->child[0]->evaluate();
-            case 'LN':
-                return log($this->child[0]->evaluate());
-            case 'EXP':
-                return exp($this->child[0]->evaluate());
-            case 'ROUND':
-                return round($this->child[0]->evaluate());
-            case 'CEILING':
-                return ceil($this->child[0]->evaluate());
-            case 'FLOOR':
-                return floor($this->child[0]->evaluate());
+        try {
+            parent::evaluate();
+            switch ($this->field) {
+                case 'ROOT':
+                    return sqrt($this->child[0]->evaluate());
+                case 'ABS':
+                    return abs($this->child[0]->evaluate());
+                case 'NEG':
+                    return -$this->child[0]->evaluate();
+                case 'LN':
+                    return log($this->child[0]->evaluate());
+                case 'EXP':
+                    return exp($this->child[0]->evaluate());
+                case 'ROUND':
+                    return round($this->child[0]->evaluate());
+                case 'CEILING':
+                    return ceil($this->child[0]->evaluate());
+                case 'FLOOR':
+                    return floor($this->child[0]->evaluate());
+            }
+            return null;
+        } catch (Throwable $e) {
+            throw new Exception("Evaluation error");
         }
-        return null;
     }
 }
 
@@ -809,8 +985,12 @@ class BlockMathDivision extends Block {
     }
 
     public function evaluate(): mixed {
-        parent::evaluate();
-        return $this->child[0]->evaluate() / $this->child[1]->evaluate();
+        try {
+            parent::evaluate();
+            return $this->child[0]->evaluate() / $this->child[1]->evaluate();
+        } catch (Throwable $e) {
+            throw new Exception("Evaluation error");
+        }
     }
 }
 
@@ -826,15 +1006,19 @@ class BlockMathDivide extends Block {
     }
 
     public function evaluate(): mixed {
-        parent::evaluate();
-        switch ($this->field) {
-            case 'MODULO':
-            case 'REMAINDER':
-                return $this->child[0]->evaluate() % $this->child[1]->evaluate();
-            case 'QUOTIENT':
-                return intdiv($this->child[0]->evaluate(), $this->child[1]->evaluate());
+        try {
+            parent::evaluate();
+            switch ($this->field) {
+                case 'MODULO':
+                case 'REMAINDER':
+                    return $this->child[0]->evaluate() % $this->child[1]->evaluate();
+                case 'QUOTIENT':
+                    return intdiv($this->child[0]->evaluate(), $this->child[1]->evaluate());
+            }
+            return null;
+        } catch (Throwable $e) {
+            throw new Exception("Evaluation error");
         }
-        return null;
     }
 }
 
@@ -850,14 +1034,18 @@ class BlockMathConvertAngles extends Block {
     }
 
     public function evaluate(): mixed {
-        parent::evaluate();
-        switch ($this->field) {
-            case 'RADIANS_TO_DEGREES':
-                return rad2deg($this->child[0]->evaluate());
-            case 'DEGREES_TO_RADIANS':
-                return deg2rad($this->child[0]->evaluate());
+        try {
+            parent::evaluate();
+            switch ($this->field) {
+                case 'RADIANS_TO_DEGREES':
+                    return rad2deg($this->child[0]->evaluate());
+                case 'DEGREES_TO_RADIANS':
+                    return deg2rad($this->child[0]->evaluate());
+            }
+            return null;
+        } catch (Throwable $e) {
+            throw new Exception("Evaluation error");
         }
-        return null;
     }
 }
 
@@ -873,17 +1061,21 @@ class BlockMathIsNumber extends Block {
     }
 
     public function evaluate(): bool {
-        parent::evaluate();
-        switch ($this->field) {
-            case 'NUMBER':
-            case 'BASE10':
-                return is_numeric($this->child[0]->evaluate());
-            case 'HEXADECIMAL':
-                return preg_match('/^[0-9a-fA-F]+$/', $this->child[0]->evaluate()) === 1;
-            case 'BINARY':
-                return preg_match('/^[01]+$/', $this->child[0]->evaluate()) === 1;
+        try {
+            parent::evaluate();
+            switch ($this->field) {
+                case 'NUMBER':
+                case 'BASE10':
+                    return is_numeric($this->child[0]->evaluate());
+                case 'HEXADECIMAL':
+                    return preg_match('/^[0-9a-fA-F]+$/', $this->child[0]->evaluate()) === 1;
+                case 'BINARY':
+                    return preg_match('/^[01]+$/', $this->child[0]->evaluate()) === 1;
+            }
+            return false;
+        } catch (Throwable $e) {
+            throw new Exception("Evaluation error");
         }
-        return false;
     }
 }
 
@@ -899,18 +1091,22 @@ class BlockMathConvertNumber extends Block {
     }
 
     public function evaluate(): mixed {
-        parent::evaluate();
-        switch ($this->field) {
-            case 'DEC_TO_HEX':
-                return dechex($this->child[0]->evaluate());
-            case 'HEX_TO_DEC':
-                return hexdec($this->child[0]->evaluate());
-            case 'DEC_TO_BIN':
-                return decbin($this->child[0]->evaluate());
-            case 'BIN_TO_DEC':
-                return bindec($this->child[0]->evaluate());
+        try {
+            parent::evaluate();
+            switch ($this->field) {
+                case 'DEC_TO_HEX':
+                    return dechex($this->child[0]->evaluate());
+                case 'HEX_TO_DEC':
+                    return hexdec($this->child[0]->evaluate());
+                case 'DEC_TO_BIN':
+                    return decbin($this->child[0]->evaluate());
+                case 'BIN_TO_DEC':
+                    return bindec($this->child[0]->evaluate());
+            }
+            return null;
+        } catch (Throwable $e) {
+            throw new Exception("Evaluation error");
         }
-        return null;
     }
 }
 
@@ -928,8 +1124,12 @@ class BlockMathNumberRadix extends Block {
     }
 
     public function evaluate(): mixed {
-        parent::evaluate();
-        return $this->field;
+        try {
+            parent::evaluate();
+            return $this->field;
+        } catch (Throwable $e) {
+            throw new Exception("Evaluation error");
+        }
     }
 }
 
@@ -942,8 +1142,12 @@ class BlockMathFormatAsDecimal extends Block {
     }
 
     public function evaluate(): mixed {
-        parent::evaluate();
-        return number_format($this->child[0]->evaluate(), $this->child[1]->evaluate(), '.', '');;
+        try {
+            parent::evaluate();
+            return number_format($this->child[0]->evaluate(), $this->child[1]->evaluate(), '.', '');
+        } catch (Throwable $e) {
+            throw new Exception("Evaluation error");
+        }
     }
 }
 
@@ -956,8 +1160,12 @@ class BlockMathAtan2 extends Block {
     }
 
     public function evaluate(): mixed {
-        parent::evaluate();
-        return atan2($this->child[0]->evaluate(), $this->child[1]->evaluate());
+        try {
+            parent::evaluate();
+            return atan2($this->child[0]->evaluate(), $this->child[1]->evaluate());
+        } catch (Throwable $e) {
+            throw new Exception("Evaluation error");
+        }
     }
 }
 
@@ -973,22 +1181,26 @@ class BlockMathTrig extends Block {
     }
 
     public function evaluate(): mixed {
-        parent::evaluate();
-        switch ($this->field) {
-            case 'SIN':
-                return sin($this->child[0]->evaluate());
-            case 'COS':
-                return cos($this->child[0]->evaluate());
-            case 'TAN':
-                return tan($this->child[0]->evaluate());
-            case 'ASIN':
-                return asin($this->child[0]->evaluate());
-            case 'ACOS':
-                return acos($this->child[0]->evaluate());
-            case 'ATAN':
-                return atan($this->child[0]->evaluate());
+        try {
+            parent::evaluate();
+            switch ($this->field) {
+                case 'SIN':
+                    return sin($this->child[0]->evaluate());
+                case 'COS':
+                    return cos($this->child[0]->evaluate());
+                case 'TAN':
+                    return tan($this->child[0]->evaluate());
+                case 'ASIN':
+                    return asin($this->child[0]->evaluate());
+                case 'ACOS':
+                    return acos($this->child[0]->evaluate());
+                case 'ATAN':
+                    return atan($this->child[0]->evaluate());
+            }
+            return null;
+        } catch (Throwable $e) {
+            throw new Exception("Evaluation error");
         }
-        return null;
     }
 }
 
@@ -1004,18 +1216,22 @@ class BlockMathOnList extends Block {
     }
 
     public function evaluate(): mixed {
-        parent::evaluate();
-        $array = array();
-        foreach ($this->child as $child) {
-            $array[] = $child->evaluate();
+        try {
+            parent::evaluate();
+            $array = array();
+            foreach ($this->child as $child) {
+                $array[] = $child->evaluate();
+            }
+            switch ($this->field) {
+                case 'MIN':
+                    return min($array);
+                case 'MAX':
+                    return max($array);
+            }
+            return null;
+        } catch (Throwable $e) {
+            throw new Exception("Evaluation error");
         }
-        switch ($this->field) {
-            case 'MIN':
-                return min($array);
-            case 'MAX':
-                return max($array);
-        }
-        return null;
     }
 }
 
@@ -1028,10 +1244,14 @@ class BlockMathRandomInt extends Block {
     }
 
     public function evaluate(): int {
-        parent::evaluate();
-        $result = random_int($this->child[0]->evaluate(), $this->child[1]->evaluate());
-        $this->evaluateEcho("Generated number: <b>" . $result . "</b><br>");
-        return $result;
+        try {
+            parent::evaluate();
+            $result = random_int($this->child[0]->evaluate(), $this->child[1]->evaluate());
+            $this->evaluateEcho("Generated number: <b>" . $result . "</b><br>");
+            return $result;
+        } catch (Throwable $e) {
+            throw new Exception("Evaluation error");
+        }
     }
 }
 
@@ -1044,10 +1264,14 @@ class BlockMathRandomFloat extends Block {
     }
 
     public function evaluate(): float {
-        parent::evaluate();
-        $result = mt_rand() / mt_getrandmax();
-        $this->evaluateEcho("Generated number: <b>" . $result . "</b><br>");
-        return $result;
+        try {
+            parent::evaluate();
+            $result = mt_rand() / mt_getrandmax();
+            $this->evaluateEcho("Generated number: <b>" . $result . "</b><br>");
+            return $result;
+        } catch (Throwable $e) {
+            throw new Exception("Evaluation error");
+        }
     }
 }
 
@@ -1067,8 +1291,12 @@ class BlockLogicBoolean extends Block {
     }
 
     public function evaluate() {
-        parent::evaluate();
-        return $this->field;
+        try {
+            parent::evaluate();
+            return $this->field;
+        } catch (Throwable $e) {
+            throw new Exception("Evaluation error");
+        }
     }
 }
 
@@ -1088,13 +1316,17 @@ class BlockLogicOperation extends Block {
     }
 
     public function evaluate() {
-        parent::evaluate();
-        $result = $this->child[0]->evaluate();
-        for ($i = 1; $i < count($this->child); $i++) {
-            if ($this->field == "AND") $result = $result && $this->child[$i]->evaluate();
-            else $result = $result || $this->child[$i]->evaluate();
+        try {
+            parent::evaluate();
+            $result = $this->child[0]->evaluate();
+            for ($i = 1; $i < count($this->child); $i++) {
+                if ($this->field == "AND") $result = $result && $this->child[$i]->evaluate();
+                else $result = $result || $this->child[$i]->evaluate();
+            }
+            return $result;
+        } catch (Throwable $e) {
+            throw new Exception("Evaluation error");
         }
-        return $result;
     }
 }
 
@@ -1114,8 +1346,12 @@ class BlockLogicFalse extends Block {
     }
 
     public function evaluate(): bool {
-        parent::evaluate();
-        return $this->field;
+        try {
+            parent::evaluate();
+            return $this->field;
+        } catch (Throwable $e) {
+            throw new Exception("Evaluation error");
+        }
     }
 }
 
@@ -1128,8 +1364,12 @@ class BlockLogicNegate extends Block {
     }
 
     public function evaluate() {
-        parent::evaluate();
-        return !$this->child[0]->evaluate();
+        try {
+            parent::evaluate();
+            return !$this->child[0]->evaluate();
+        } catch (Throwable $e) {
+            throw new Exception("Evaluation error");
+        }
     }
 }
 
@@ -1142,8 +1382,12 @@ class BlockLogicOr extends Block {
     }
 
     public function evaluate() {
-        parent::evaluate();
-        return $this->child[0]->evaluate() || $this->child[1]->evaluate();
+        try {
+            parent::evaluate();
+            return $this->child[0]->evaluate() || $this->child[1]->evaluate();
+        } catch (Throwable $e) {
+            throw new Exception("Evaluation error");
+        }
     }
 }
 
@@ -1160,14 +1404,18 @@ class BlockLogicCompare extends Block {
     }
 
     public function evaluate(): bool {
-        parent::evaluate();
-        switch ($this->map[$this->field]) {
-            case '=':
-                return $this->child[0]->evaluate() == $this->child[1]->evaluate();
-            case '!=':
-                return $this->child[0]->evaluate() != $this->child[1]->evaluate();
+        try {
+            parent::evaluate();
+            switch ($this->map[$this->field]) {
+                case '=':
+                    return $this->child[0]->evaluate() == $this->child[1]->evaluate();
+                case '!=':
+                    return $this->child[0]->evaluate() != $this->child[1]->evaluate();
+            }
+            return false;
+        } catch (Throwable $e) {
+            throw new Exception("Evaluation error");
         }
-        return false;
     }
 }
 
@@ -1187,8 +1435,12 @@ class BlockGlobalDeclaration extends Block {
     }
 
     public function evaluate() {
-        parent::evaluate();
-        $this->project->setVariable("global " . $this->field, $this->child[0]->evaluate());
+        try {
+            parent::evaluate();
+            $this->project->setVariable("global " . $this->field, $this->child[0]->evaluate());
+        } catch (Throwable $e) {
+            throw new Exception("Evaluation error");
+        }
     }
 }
 
@@ -1209,9 +1461,13 @@ class BlockLexicalVariableSet extends Block {
     }
 
     public function evaluate() {
-        parent::evaluate();
-        $this->project->setVariable($this->field, $this->child[0]->evaluate());
-        $this->evaluateEcho("Variable <b>" . $this->field . "</b> set to <b>" . (is_array($this->project->getVariable($this->field)) ? "[" . implode(' ', $this->project->getVariable($this->field)) . "]" : $this->project->getVariable($this->field)) . "</b><br>");
+        try {
+            parent::evaluate();
+            $this->project->setVariable($this->field, $this->child[0]->evaluate());
+            $this->evaluateEcho("Variable <b>" . $this->field . "</b> set to <b>" . (is_array($this->project->getVariable($this->field)) ? "[" . implode(' ', $this->project->getVariable($this->field)) . "]" : $this->project->getVariable($this->field)) . "</b><br>");
+        } catch (Throwable $e) {
+            throw new Exception("Evaluation error");
+        }
     }
 }
 
@@ -1231,24 +1487,28 @@ class BlockLexicalVariableGet extends Block {
     }
 
     public function evaluate() {
-        parent::evaluate();
-        $this->evaluateEcho("<b>" . (is_array($this->project->getVariable($this->field)) ? "[" . implode(' ', $this->project->getVariable($this->field)) . "]" : $this->project->getVariable($this->field)) . "</b><br>");
-        return $this->project->getVariable($this->field);
+        try {
+            parent::evaluate();
+            $this->evaluateEcho("<b>" . (is_array($this->project->getVariable($this->field)) ? "[" . implode(' ', $this->project->getVariable($this->field)) . "]" : $this->project->getVariable($this->field)) . "</b><br>");
+            return $this->project->getVariable($this->field);
+        } catch (Throwable $e) {
+            throw new Exception("Evaluation error");
+        }
     }
 }
 
 class BlockLocalDeclarationStatement extends Block {
 
-    protected $field;
+    protected array $field;
 
     function __construct($data) {
         parent::__construct($data);
         $this->alias = "Variable local declaration (statement)";
-        $this->field = $data['field'];
+        $this->field = is_array($data['field']) ? $data['field'] : array($data['field']);
         $this->interpreterText = "Declaring local variable" . ($this->hasMoreVariablesThanOne() ? "s" : "") . "<br>";
     }
 
-    public function getField() {
+    public function getField(): array {
         return $this->field;
     }
 
@@ -1257,42 +1517,37 @@ class BlockLocalDeclarationStatement extends Block {
     }
 
     public function evaluate() {
-        parent::evaluate();
+        try {
+            parent::evaluate();
 
-        if ($this->hasMoreVariablesThanOne()) {
             for ($i = 0; $i < count($this->field); $i++) {
                 $this->project->setVariable($this->field[$i], $this->child[$i]->evaluate());
                 $this->evaluateEcho("Variable <b>" . $this->field[$i] . "</b> set to <b>" . (is_array($this->project->getVariable($this->field[$i])) ? "[" . implode(' ', $this->project->getVariable($this->field[$i])) . "]" : $this->project->getVariable($this->field[$i])) . "</b><br>");
             }
-        } else {
-            $this->project->setVariable($this->field, $this->child[0]->evaluate());
-            $this->evaluateEcho("Variable <b>" . $this->field . "</b> set to <b>" . (is_array($this->project->getVariable($this->field)) ? "[" . implode(' ', $this->project->getVariable($this->field)) . "]" : $this->project->getVariable($this->field)) . "</b><br>");
-        }
 
-        for ($i = ($this->hasMoreVariablesThanOne() ? count($this->field) : 1); $i < count($this->child); $i++) {
-            $this->child[$i]->evaluate();
-        }
+            for ($i = count($this->field); $i < count($this->child); $i++) {
+                $this->child[$i]->evaluate();
+            }
 
-        if ($this->hasMoreVariablesThanOne()) {
             for ($i = 0; $i < count($this->field); $i++) {
                 $this->project->removeVariable($this->field[$i]);
                 $this->evaluateEcho("Variable <b>" . $this->field[$i] . "</b> cleared<br>");
             }
-        } else {
-            $this->project->removeVariable($this->field);
-            $this->evaluateEcho("Variable <b>" . $this->field . "</b> cleared<br>");
+
+        } catch (Throwable $e) {
+            throw new Exception("Evaluation error");
         }
     }
 }
 
 class BlockLocalDeclarationExpression extends Block {
 
-    protected $field;
+    protected array $field;
 
     function __construct($data) {
         parent::__construct($data);
         $this->alias = "Variable local declaration (expression)";
-        $this->field = $data['field'];
+        $this->field = is_array($data['field']) ? $data['field'] : array($data['field']);
         $this->interpreterText = "Declaring local variable" . ($this->hasMoreVariablesThanOne() ? "s" : "") . "<br>";
     }
 
@@ -1305,31 +1560,25 @@ class BlockLocalDeclarationExpression extends Block {
     }
 
     public function evaluate() {
-        parent::evaluate();
+        try {
+            parent::evaluate();
 
-        if ($this->hasMoreVariablesThanOne()) {
             for ($i = 0; $i < count($this->field); $i++) {
                 $this->project->setVariable($this->field[$i], $this->child[$i]->evaluate());
                 $this->evaluateEcho("Variable <b>" . $this->field[$i] . "</b> set to <b>" . $this->project->getVariable($this->field[$i]) . "</b><br>");
             }
-        } else {
-            $this->project->setVariable($this->field, $this->child[0]->evaluate());
-            $this->evaluateEcho("Variable <b>" . $this->field . "</b> set to <b>" . $this->project->getVariable($this->field) . "</b><br>");
-        }
 
-        $result = $this->child[count($this->field)]->evaluate();
+            $result = $this->child[count($this->field)]->evaluate();
 
-        if ($this->hasMoreVariablesThanOne()) {
             for ($i = 0; $i < count($this->field); $i++) {
                 $this->project->removeVariable($this->field[$i]);
                 $this->evaluateEcho("Variable <b>" . $this->field[$i] . "</b> cleared<br>");
             }
-        } else {
-            $this->project->removeVariable($this->field);
-            $this->evaluateEcho("Variable <b>" . $this->field . "</b> cleared<br>");
-        }
 
-        return $result;
+            return $result;
+        } catch (Throwable $e) {
+            throw new Exception("Evaluation error");
+        }
     }
 }
 
@@ -1342,14 +1591,18 @@ class BlockControlsDoThenReturn extends Block {
     }
 
     public function evaluate() {
-        parent::evaluate();
-        for ($i = 1; $i < count($this->child); $i++) {
-            $this->child[$i]->evaluate();
+        try {
+            parent::evaluate();
+            for ($i = 1; $i < count($this->child); $i++) {
+                $this->child[$i]->evaluate();
+            }
+            $this->evaluateEcho("Evaluation <b>do then return</b> returning ");
+            $result = $this->child[0]->evaluate();
+            $this->evaluateEcho("Evaluation <b>do then return</b> done<br>");
+            return $result;
+        } catch (Throwable $e) {
+            throw new Exception("Evaluation error");
         }
-        $this->evaluateEcho("Evaluation <b>do then return</b> returning ");
-        $result = $this->child[0]->evaluate();
-        $this->evaluateEcho("Evaluation <b>do then return</b> done<br>");
-        return $result;
     }
 }
 
@@ -1362,15 +1615,19 @@ class BlockControlsForRange extends Block {
     }
 
     public function evaluate() {
-        parent::evaluate();
-        $start = $this->child[0]->evaluate();
-        $end = $this->child[1]->evaluate();
-        $step = $this->child[2]->evaluate();
-        for ($index = $start; $index <= $end; $index = $index + $step) {
-            if (count($this->child) <= 3) break;
-            for ($i = 3; $i < count($this->child); $i++) {
-                $this->child[$i]->evaluate();
+        try {
+            parent::evaluate();
+            $start = $this->child[0]->evaluate();
+            $end = $this->child[1]->evaluate();
+            $step = $this->child[2]->evaluate();
+            for ($index = $start; $index <= $end; $index = $index + $step) {
+                if (count($this->child) <= 3) break;
+                for ($i = 3; $i < count($this->child); $i++) {
+                    $this->child[$i]->evaluate();
+                }
             }
+        } catch (Throwable $e) {
+            throw new Exception("Evaluation error");
         }
     }
 }
@@ -1418,30 +1675,34 @@ class BlockControlsIf extends Block {
     }
 
     public function evaluate() {
-        parent::evaluate();
+        try {
+            parent::evaluate();
 
-        $this->evaluateEcho("This control has 1x if, " . $this->elseifCount . "x elseif, " . $this->elseCount . "x else<br>");
+            $this->evaluateEcho("This control has 1x if, " . $this->elseifCount . "x elseif, " . $this->elseCount . "x else<br>");
 
-        $lastResult = false;
-        for ($i = 0; $i < count($this->conditionBlocks); $i++) {
-            if ($lastResult == false) {
-                if ($this->conditionBlocks[$i] != null) {
-                    $this->evaluateEcho("Testing <b>" . ($i == 0 ? "IF" : "ELSEIF") . "</b> condition<br>");
-                    if ($lastResult = $this->conditionBlocks[$i]->evaluate()) {
-                        $this->evaluateEcho("Condition is TRUE. Evaluating inner code<br>");
+            $lastResult = false;
+            for ($i = 0; $i < count($this->conditionBlocks); $i++) {
+                if ($lastResult == false) {
+                    if ($this->conditionBlocks[$i] != null) {
+                        $this->evaluateEcho("Testing <b>" . ($i == 0 ? "IF" : "ELSEIF") . "</b> condition<br>");
+                        if ($lastResult = $this->conditionBlocks[$i]->evaluate()) {
+                            $this->evaluateEcho("Condition is TRUE. Evaluating inner code<br>");
+                            foreach ($this->codeBlocks[$i] as $child) {
+                                $child->evaluate();
+                            }
+                        } else {
+                            $this->evaluateEcho("Condition is FALSE<br>");
+                        }
+                    } else {
+                        $this->evaluateEcho("Evaluating <b>ELSE</b> inner code<br>");
                         foreach ($this->codeBlocks[$i] as $child) {
                             $child->evaluate();
                         }
-                    } else {
-                        $this->evaluateEcho("Condition is FALSE<br>");
-                    }
-                } else {
-                    $this->evaluateEcho("Evaluating <b>ELSE</b> inner code<br>");
-                    foreach ($this->codeBlocks[$i] as $child) {
-                        $child->evaluate();
                     }
                 }
             }
+        } catch (Throwable $e) {
+            throw new Exception("Evaluation error");
         }
     }
 }
@@ -1458,12 +1719,16 @@ class BlockListsCreate extends Block {
     }
 
     public function evaluate() {
-        parent::evaluate();
-        $list = array();
-        foreach ($this->child as $child) {
-            $list[] = $child->evaluate();
+        try {
+            parent::evaluate();
+            $list = array();
+            foreach ($this->child as $child) {
+                $list[] = $child->evaluate();
+            }
+            return $list;
+        } catch (Throwable $e) {
+            throw new Exception("Evaluation error");
         }
-        return $list;
     }
 }
 
@@ -1479,16 +1744,20 @@ class BlockListsAddItems extends Block {
     }
 
     public function evaluate() {
-        parent::evaluate();
-        $list = $this->child[0]->evaluate();
-        if (count($this->child) > 1) {
-            for ($i = 1; $i < count($this->child); $i++) {
-                $list[] = $this->child[$i]->evaluate();
+        try {
+            parent::evaluate();
+            $list = $this->child[0]->evaluate();
+            if (count($this->child) > 1) {
+                for ($i = 1; $i < count($this->child); $i++) {
+                    $list[] = $this->child[$i]->evaluate();
+                }
             }
-        }
 
-        if (str_starts_with($this->child[0]->getType(), "lexical_variable")) {
-            $this->project->setVariable($this->child[0]->getField(), $list);
+            if (str_starts_with($this->child[0]->getType(), "lexical_variable")) {
+                $this->project->setVariable($this->child[0]->getField(), $list);
+            }
+        } catch (Throwable $e) {
+            throw new Exception("Evaluation error");
         }
     }
 }
