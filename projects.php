@@ -11,6 +11,7 @@ class Project {
     private array $components;
     private array $blocks;
     private array $variables;
+    private array $logs = array();
 
     function __construct($fileName, $projectName, $components, $blocks, $variables = array()) {
         $this->fileName = $fileName;
@@ -19,6 +20,18 @@ class Project {
         $this->blocks = $blocks;
         $this->variables = $variables;
         $this->addProjectReferenceToChildren();
+    }
+
+    public function resetLogs(): void {
+        $this->logs = array();
+    }
+
+    public function addLog($log): void {
+        $this->logs[] = $log;
+    }
+
+    public function getLogs(): array {
+        return $this->logs;
     }
 
     public function isEvaluated(): bool {
@@ -157,6 +170,10 @@ class Project {
         return $count;
     }
 
+    public function save(): void {
+        $_SESSION['projects'][$this->fileName] = serialize($this);
+    }
+
     public function info(): void {
         echo "<h1>Project info</h1>";
         echo "Project name: " . ($this->projectName !== null ? $this->projectName : "null") . "<br>";
@@ -242,10 +259,6 @@ class Project {
 
 abstract class ProjectHandler {
 
-    static function saveProject(Project $project): void {
-        $_SESSION['projects'][$project->getFileName()] = serialize($project);
-    }
-
     static function discoverAiaProjects(): array {
         try {
             return ProjectHandler::searchFilesByExtension($_SERVER['DOCUMENT_ROOT'] . "/projectsUpload/" . session_id() . "/", "aia");
@@ -285,7 +298,7 @@ abstract class ProjectHandler {
                 ProjectHandler::pushBlocksToArray($screenData['block'], $blocksRaw, $screenName, null);
             }
         }
-        print_r($blocksRaw);
+        //print_r($blocksRaw);
         $blocks = ProjectHandler::createInstancesOfBlocks($blocksRaw);
         return $blocks;
     }
@@ -392,6 +405,34 @@ abstract class ProjectHandler {
             }
         }
         return null;
+    }
+
+    static function getProjectsContainsBlock(String $blockAlias): array {
+        $array = array();
+        foreach($_SESSION['projects'] as $projectSerialized) {
+            $project = unserialize($projectSerialized);
+            foreach($project->getBlocks() as $block) {
+                if($block->getAlias() == $blockAlias) {
+                    $array[] = $project;
+                    break;
+                }
+            }
+        }
+        return $array;
+    }
+
+    static function getProjectsContainsComponent(String $componentType): array {
+        $array = array();
+        foreach($_SESSION['projects'] as $projectSerialized) {
+            $project = unserialize($projectSerialized);
+            foreach($project->getComponents() as $component) {
+                if($component->getType() == $componentType) {
+                    $array[] = $project;
+                    break;
+                }
+            }
+        }
+        return $array;
     }
 
     static function createBlockByType($blockData): Block {

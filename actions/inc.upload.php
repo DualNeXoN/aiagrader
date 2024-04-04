@@ -46,7 +46,7 @@ if (isset($_POST['upload'])) {
             foreach($filePaths as $filePath) {
                 if(str_ends_with($filePath, $file)) {
                     $project = ProjectHandler::loadProject($filePath);
-                    $_SESSION['projects'][pathinfo($file, PATHINFO_FILENAME)] = serialize($project);
+                    $_SESSION['projects'][$project->getFileName()] = serialize($project);
                     break;
                 }
             }

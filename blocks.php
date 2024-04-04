@@ -163,14 +163,15 @@ class Block {
     }
 
     protected function evaluateEcho(String $str) {
-        echo $str;
+        $this->project->addLog($str);
+        //echo $str;
     }
 
     public function evaluate() {
         try {
             $this->evaluateEcho($this->interpreterText);
         } catch (Throwable $e) {
-            throw new Exception("Evaluation error");
+            throw new Exception($e->getMessage());
         }
     }
 }
@@ -209,7 +210,7 @@ class BlockComponentEvent extends Block {
                 $child->evaluate();
             }
         } catch (Throwable $e) {
-            throw new Exception("Evaluation error");
+            throw new Exception($e->getMessage());
         }
     }
 }
@@ -252,10 +253,10 @@ class BlockComponentMethod extends Block {
             if (method_exists($component, $this->methodName)) {
                 call_user_func_array(array($component, $this->methodName), $args);
             } else {
-                $this->evaluateEcho("<text style=\"color: yellow\">Unsupported method <b>" . $this->methodName . "</b> of component <b>" . $this->componentType . "</b></text><br>");
+                $this->evaluateEcho("<text style=\"color: red\">Unsupported method <b>" . $this->methodName . "</b> of component <b>" . $this->componentType . "</b></text><br>");
             }
         } catch (Throwable $e) {
-            throw new Exception("Evaluation error");
+            throw new Exception($e->getMessage());
         }
     }
 }
@@ -307,7 +308,7 @@ class BlockProceduresDefnoreturn extends Block {
                 $this->evaluateEcho("Variable <b>" . $this->vars[$i] . "</b> cleared<br>");
             }
         } catch (Throwable $e) {
-            throw new Exception("Evaluation error");
+            throw new Exception($e->getMessage());
         }
     }
 }
@@ -332,7 +333,7 @@ class BlockProceduresDefreturn extends Block {
             parent::evaluate();
             return $this->child[0]->evaluate();
         } catch (Throwable $e) {
-            throw new Exception("Evaluation error");
+            throw new Exception($e->getMessage());
         }
     }
 }
@@ -361,7 +362,7 @@ class BlockProceduresCallnoreturn extends Block {
             }
             $this->project->getDefinedFunction($this->field)->evaluate($args);
         } catch (Throwable $e) {
-            throw new Exception("Evaluation error");
+            throw new Exception($e->getMessage());
         }
     }
 }
@@ -386,7 +387,7 @@ class BlockProceduresCallreturn extends Block {
             parent::evaluate();
             return $this->project->getDefinedFunction($this->field)->evaluate();
         } catch (Throwable $e) {
-            throw new Exception("Evaluation error");
+            throw new Exception($e->getMessage());
         }
     }
 }
@@ -395,16 +396,16 @@ class BlockComponentSetGet extends Block {
 
     protected String $componentType;
     protected String $setOrGet;
-    protected String $propertyName;
-    protected String $instanceName;
+    protected ?String $propertyName;
+    protected ?String $instanceName;
 
     function __construct($data) {
         parent::__construct($data);
         $this->alias = "Setter/Getter";
         $this->componentType = $data['component_type'];
         $this->setOrGet = $data['set_or_get'];
-        $this->propertyName = $data['property_name'];
-        $this->instanceName = $data['instance_name'];
+        $this->propertyName = isset($data['property_name']) ? $data['property_name'] : null;
+        $this->instanceName = isset($data['instance_name']) ? $data['instance_name'] : null;
         $this->interpreterText = ($this->setOrGet === "get" ? "Getting property <b>" . $this->propertyName . "</b> of instance <b>" . $this->instanceName . "</b><br>" : "Setting property <b>" . $this->propertyName . "</b> of instance <b>" . $this->instanceName . "</b> to ");
     }
 
@@ -420,11 +421,11 @@ class BlockComponentSetGet extends Block {
         return $this->setOrGet == "get";
     }
 
-    public function getPropertyName(): String {
+    public function getPropertyName(): ?String {
         return $this->propertyName;
     }
 
-    public function getInstanceName(): String {
+    public function getInstanceName(): ?String {
         return $this->instanceName;
     }
 
@@ -437,7 +438,7 @@ class BlockComponentSetGet extends Block {
                 $this->project->getComponentByName($this->instanceName)->setProperty($this->propertyName, $this->child[0]->evaluate());
             }
         } catch (Throwable $e) {
-            throw new Exception("Evaluation error");
+            throw new Exception($e->getMessage());
         }
     }
 }
@@ -465,7 +466,7 @@ class BlockComponentComponentBlock extends Block {
             }
             return $this->field;
         } catch (Throwable $e) {
-            throw new Exception("Evaluation error");
+            throw new Exception($e->getMessage());
         }
     }
 }
@@ -493,7 +494,7 @@ class BlockText extends Block {
             }
             return $this->field;
         } catch (Throwable $e) {
-            throw new Exception("Evaluation error");
+            throw new Exception($e->getMessage());
         }
     }
 }
@@ -515,7 +516,7 @@ class BlockTextJoin extends Block {
             }
             return $result;
         } catch (Throwable $e) {
-            throw new Exception("Evaluation error");
+            throw new Exception($e->getMessage());
         }
     }
 }
@@ -533,7 +534,7 @@ class BlockTextLength extends Block {
             parent::evaluate();
             return strlen($this->child[0]->evaluate());
         } catch (Throwable $e) {
-            throw new Exception("Evaluation error");
+            throw new Exception($e->getMessage());
         }
     }
 }
@@ -558,7 +559,7 @@ class BlockTextStartsAt extends Block {
 
             return $position;
         } catch (Throwable $e) {
-            throw new Exception("Evaluation error");
+            throw new Exception($e->getMessage());
         }
     }
 }
@@ -581,7 +582,7 @@ class BlockTextContains extends Block {
             $this->evaluateEcho("<div style=\"color:yellow\">BlockTextContains unimplemented mode (" . $this->field . "). Returning false</div>");
             return false;
         } catch (Throwable $e) {
-            throw new Exception("Evaluation error");
+            throw new Exception($e->getMessage());
         }
     }
 }
@@ -601,7 +602,7 @@ class BlockTextReplaceAll extends Block {
             parent::evaluate();
             return str_replace($this->child[1]->evaluate(), $this->child[2]->evaluate(), $this->child[0]->evaluate());
         } catch (Throwable $e) {
-            throw new Exception("Evaluation error");
+            throw new Exception($e->getMessage());
         }
     }
 }
@@ -619,7 +620,7 @@ class BlockTextReverse extends Block {
             parent::evaluate();
             return strrev($this->child[0]->evaluate());
         } catch (Throwable $e) {
-            throw new Exception("Evaluation error");
+            throw new Exception($e->getMessage());
         }
     }
 }
@@ -641,7 +642,7 @@ class BlockTextChangeCase extends Block {
             if ($this->field == "UPCASE") return strtoupper($this->child[0]->evaluate());
             else return strtolower($this->child[0]->evaluate());
         } catch (Throwable $e) {
-            throw new Exception("Evaluation error");
+            throw new Exception($e->getMessage());
         }
     }
 }
@@ -673,7 +674,7 @@ class BlockTextCompare extends Block {
             }
             return false;
         } catch (Throwable $e) {
-            throw new Exception("Evaluation error");
+            throw new Exception($e->getMessage());
         }
     }
 }
@@ -691,7 +692,7 @@ class BlockTextIsEmpty extends Block {
             parent::evaluate();
             return empty($this->child[0]->evaluate());
         } catch (Throwable $e) {
-            throw new Exception("Evaluation error");
+            throw new Exception($e->getMessage());
         }
     }
 }
@@ -719,7 +720,7 @@ class BlockColor extends Block {
             }
             return $this->field;
         } catch (Throwable $e) {
-            throw new Exception("Evaluation error");
+            throw new Exception($e->getMessage());
         }
     }
 }
@@ -753,7 +754,7 @@ class BlockColorMakeColor extends Block {
             }
             return null;
         } catch (Throwable $e) {
-            throw new Exception("Evaluation error");
+            throw new Exception($e->getMessage());
         }
     }
 }
@@ -778,7 +779,7 @@ class BlockMathNumber extends Block {
             parent::evaluate();
             return $this->field;
         } catch (Throwable $e) {
-            throw new Exception("Evaluation error");
+            throw new Exception($e->getMessage());
         }
     }
 }
@@ -800,7 +801,7 @@ class BlockMathAdd extends Block {
             }
             return $result;
         } catch (Throwable $e) {
-            throw new Exception("Evaluation error");
+            throw new Exception($e->getMessage());
         }
     }
 }
@@ -819,7 +820,7 @@ class BlockMathSubtract extends Block {
             $result = $this->child[0]->evaluate() - $this->child[1]->evaluate();
             return $result;
         } catch (Throwable $e) {
-            throw new Exception("Evaluation error");
+            throw new Exception($e->getMessage());
         }
     }
 }
@@ -841,7 +842,7 @@ class BlockMathMultiply extends Block {
             }
             return $result;
         } catch (Throwable $e) {
-            throw new Exception("Evaluation error");
+            throw new Exception($e->getMessage());
         }
     }
 }
@@ -860,7 +861,7 @@ class BlockMathPower extends Block {
             $result = pow($this->child[0]->evaluate(), $this->child[1]->evaluate());
             return $result;
         } catch (Throwable $e) {
-            throw new Exception("Evaluation error");
+            throw new Exception($e->getMessage());
         }
     }
 }
@@ -896,7 +897,7 @@ class BlockMathBitwise extends Block {
             }
             return $result;
         } catch (Throwable $e) {
-            throw new Exception("Evaluation error");
+            throw new Exception($e->getMessage());
         }
     }
 }
@@ -932,7 +933,7 @@ class BlockMathCompare extends Block {
             }
             return false;
         } catch (Throwable $e) {
-            throw new Exception("Evaluation error");
+            throw new Exception($e->getMessage());
         }
     }
 }
@@ -971,7 +972,7 @@ class BlockMathSingle extends Block {
             }
             return null;
         } catch (Throwable $e) {
-            throw new Exception("Evaluation error");
+            throw new Exception($e->getMessage());
         }
     }
 }
@@ -989,7 +990,7 @@ class BlockMathDivision extends Block {
             parent::evaluate();
             return $this->child[0]->evaluate() / $this->child[1]->evaluate();
         } catch (Throwable $e) {
-            throw new Exception("Evaluation error");
+            throw new Exception($e->getMessage());
         }
     }
 }
@@ -1000,7 +1001,7 @@ class BlockMathDivide extends Block {
 
     function __construct($data) {
         parent::__construct($data);
-        $this->alias = "Math division (modulo/remainder/quotient)";
+        $this->alias = "Math division (modulo/quotient)";
         $this->field = $data['field'];
         $this->interpreterText = $this->field . "<br>";
     }
@@ -1017,7 +1018,7 @@ class BlockMathDivide extends Block {
             }
             return null;
         } catch (Throwable $e) {
-            throw new Exception("Evaluation error");
+            throw new Exception($e->getMessage());
         }
     }
 }
@@ -1044,7 +1045,7 @@ class BlockMathConvertAngles extends Block {
             }
             return null;
         } catch (Throwable $e) {
-            throw new Exception("Evaluation error");
+            throw new Exception($e->getMessage());
         }
     }
 }
@@ -1074,7 +1075,7 @@ class BlockMathIsNumber extends Block {
             }
             return false;
         } catch (Throwable $e) {
-            throw new Exception("Evaluation error");
+            throw new Exception($e->getMessage());
         }
     }
 }
@@ -1105,7 +1106,7 @@ class BlockMathConvertNumber extends Block {
             }
             return null;
         } catch (Throwable $e) {
-            throw new Exception("Evaluation error");
+            throw new Exception($e->getMessage());
         }
     }
 }
@@ -1128,7 +1129,7 @@ class BlockMathNumberRadix extends Block {
             parent::evaluate();
             return $this->field;
         } catch (Throwable $e) {
-            throw new Exception("Evaluation error");
+            throw new Exception($e->getMessage());
         }
     }
 }
@@ -1146,7 +1147,7 @@ class BlockMathFormatAsDecimal extends Block {
             parent::evaluate();
             return number_format($this->child[0]->evaluate(), $this->child[1]->evaluate(), '.', '');
         } catch (Throwable $e) {
-            throw new Exception("Evaluation error");
+            throw new Exception($e->getMessage());
         }
     }
 }
@@ -1164,7 +1165,7 @@ class BlockMathAtan2 extends Block {
             parent::evaluate();
             return atan2($this->child[0]->evaluate(), $this->child[1]->evaluate());
         } catch (Throwable $e) {
-            throw new Exception("Evaluation error");
+            throw new Exception($e->getMessage());
         }
     }
 }
@@ -1199,7 +1200,7 @@ class BlockMathTrig extends Block {
             }
             return null;
         } catch (Throwable $e) {
-            throw new Exception("Evaluation error");
+            throw new Exception($e->getMessage());
         }
     }
 }
@@ -1230,7 +1231,7 @@ class BlockMathOnList extends Block {
             }
             return null;
         } catch (Throwable $e) {
-            throw new Exception("Evaluation error");
+            throw new Exception($e->getMessage());
         }
     }
 }
@@ -1250,7 +1251,7 @@ class BlockMathRandomInt extends Block {
             $this->evaluateEcho("Generated number: <b>" . $result . "</b><br>");
             return $result;
         } catch (Throwable $e) {
-            throw new Exception("Evaluation error");
+            throw new Exception($e->getMessage());
         }
     }
 }
@@ -1270,7 +1271,7 @@ class BlockMathRandomFloat extends Block {
             $this->evaluateEcho("Generated number: <b>" . $result . "</b><br>");
             return $result;
         } catch (Throwable $e) {
-            throw new Exception("Evaluation error");
+            throw new Exception($e->getMessage());
         }
     }
 }
@@ -1295,7 +1296,7 @@ class BlockLogicBoolean extends Block {
             parent::evaluate();
             return $this->field;
         } catch (Throwable $e) {
-            throw new Exception("Evaluation error");
+            throw new Exception($e->getMessage());
         }
     }
 }
@@ -1325,7 +1326,7 @@ class BlockLogicOperation extends Block {
             }
             return $result;
         } catch (Throwable $e) {
-            throw new Exception("Evaluation error");
+            throw new Exception($e->getMessage());
         }
     }
 }
@@ -1350,7 +1351,7 @@ class BlockLogicFalse extends Block {
             parent::evaluate();
             return $this->field;
         } catch (Throwable $e) {
-            throw new Exception("Evaluation error");
+            throw new Exception($e->getMessage());
         }
     }
 }
@@ -1368,7 +1369,7 @@ class BlockLogicNegate extends Block {
             parent::evaluate();
             return !$this->child[0]->evaluate();
         } catch (Throwable $e) {
-            throw new Exception("Evaluation error");
+            throw new Exception($e->getMessage());
         }
     }
 }
@@ -1386,7 +1387,7 @@ class BlockLogicOr extends Block {
             parent::evaluate();
             return $this->child[0]->evaluate() || $this->child[1]->evaluate();
         } catch (Throwable $e) {
-            throw new Exception("Evaluation error");
+            throw new Exception($e->getMessage());
         }
     }
 }
@@ -1414,7 +1415,7 @@ class BlockLogicCompare extends Block {
             }
             return false;
         } catch (Throwable $e) {
-            throw new Exception("Evaluation error");
+            throw new Exception($e->getMessage());
         }
     }
 }
@@ -1439,7 +1440,7 @@ class BlockGlobalDeclaration extends Block {
             parent::evaluate();
             $this->project->setVariable("global " . $this->field, $this->child[0]->evaluate());
         } catch (Throwable $e) {
-            throw new Exception("Evaluation error");
+            throw new Exception($e->getMessage());
         }
     }
 }
@@ -1466,7 +1467,7 @@ class BlockLexicalVariableSet extends Block {
             $this->project->setVariable($this->field, $this->child[0]->evaluate());
             $this->evaluateEcho("Variable <b>" . $this->field . "</b> set to <b>" . (is_array($this->project->getVariable($this->field)) ? "[" . implode(' ', $this->project->getVariable($this->field)) . "]" : $this->project->getVariable($this->field)) . "</b><br>");
         } catch (Throwable $e) {
-            throw new Exception("Evaluation error");
+            throw new Exception($e->getMessage());
         }
     }
 }
@@ -1492,7 +1493,7 @@ class BlockLexicalVariableGet extends Block {
             $this->evaluateEcho("<b>" . (is_array($this->project->getVariable($this->field)) ? "[" . implode(' ', $this->project->getVariable($this->field)) . "]" : $this->project->getVariable($this->field)) . "</b><br>");
             return $this->project->getVariable($this->field);
         } catch (Throwable $e) {
-            throw new Exception("Evaluation error");
+            throw new Exception($e->getMessage());
         }
     }
 }
@@ -1535,7 +1536,7 @@ class BlockLocalDeclarationStatement extends Block {
             }
 
         } catch (Throwable $e) {
-            throw new Exception("Evaluation error");
+            throw new Exception($e->getMessage());
         }
     }
 }
@@ -1577,7 +1578,7 @@ class BlockLocalDeclarationExpression extends Block {
 
             return $result;
         } catch (Throwable $e) {
-            throw new Exception("Evaluation error");
+            throw new Exception($e->getMessage());
         }
     }
 }
@@ -1601,7 +1602,7 @@ class BlockControlsDoThenReturn extends Block {
             $this->evaluateEcho("Evaluation <b>do then return</b> done<br>");
             return $result;
         } catch (Throwable $e) {
-            throw new Exception("Evaluation error");
+            throw new Exception($e->getMessage());
         }
     }
 }
@@ -1627,7 +1628,7 @@ class BlockControlsForRange extends Block {
                 }
             }
         } catch (Throwable $e) {
-            throw new Exception("Evaluation error");
+            throw new Exception($e->getMessage());
         }
     }
 }
@@ -1702,7 +1703,7 @@ class BlockControlsIf extends Block {
                 }
             }
         } catch (Throwable $e) {
-            throw new Exception("Evaluation error");
+            throw new Exception($e->getMessage());
         }
     }
 }
@@ -1727,7 +1728,7 @@ class BlockListsCreate extends Block {
             }
             return $list;
         } catch (Throwable $e) {
-            throw new Exception("Evaluation error");
+            throw new Exception($e->getMessage());
         }
     }
 }
@@ -1757,7 +1758,7 @@ class BlockListsAddItems extends Block {
                 $this->project->setVariable($this->child[0]->getField(), $list);
             }
         } catch (Throwable $e) {
-            throw new Exception("Evaluation error");
+            throw new Exception($e->getMessage());
         }
     }
 }

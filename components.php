@@ -2,6 +2,32 @@
 
 class BaseComponent {
 
+    const COMPONENT_ALIASES = [
+        "Button",
+        "Image",
+        "Label",
+        "CheckBox",
+        "Switch",
+        "TextBox",
+        "Slider",
+        "PasswordTextBox",
+        "HorizontalArrangement",
+        "VerticalArrangement",
+        "Canvas",
+        "Notifier",
+        "Sound",
+        "Player",
+        "AccelerometerSensor",
+        "Clock",
+        "ImageSprite",
+        "HorizontalScrollArrangement",
+        "HorizontalScrollHandler",
+        "VerticalScrollHandler",
+        "ListView",
+        "BarcodeScanner",
+        "Spinner"
+    ];
+
     protected ?Project $project = null;
     protected String $name;
     protected String $type;
@@ -134,14 +160,14 @@ class ComponentImageSprite extends BaseComponent {
     function __construct($data) {
         parent::__construct($data);
         $this->properties['Heading'] = (isset($data['Heading']) ? intval($data['Heading']) : 0);
-        $this->properties['Height'] = intval($data['Height']);
-        $this->properties['Width'] = intval($data['Width']);
+        $this->properties['Height'] = isset($data['Height']) ? intval($data['Height']) : 0;
+        $this->properties['Width'] = isset($data['Width']) ? intval($data['Width']) : 0;
         $this->properties['Interval'] = (isset($data['Interval']) ? intval($data['Interval']) : 100);
         $this->properties['Picture'] = (isset($data['Picture']) ? $data['Picture'] : null);
         $this->properties['Rotates'] = (isset($data['Rotates']) ? boolval($data['Rotates']) : true);
         $this->properties['Speed'] = (isset($data['Speed']) ? floatval($data['Speed']) : 0);
-        $this->properties['X'] = intval($data['X']);
-        $this->properties['Y'] = intval($data['Y']);
+        $this->properties['X'] = isset($data['X']) ? intval($data['X']) : 0;
+        $this->properties['Y'] = isset($data['Y']) ? intval($data['Y']) : 0;
         $this->properties['Enabled'] = !isset($data['Enabled']);
     }
 
@@ -156,8 +182,8 @@ class ComponentCanvas extends BaseComponent {
         parent::__construct($data);
         $this->properties['BackgroundColor'] = (isset($data['BackgroundColor']) ? $data['BackgroundColor'] : "#ffffff");
         $this->properties['BackgroundImage'] = isset($data['BackgroundImage']) ? $data['BackgroundImage'] : null;
-        $this->properties['Height'] = intval($data['Height']);
-        $this->properties['Width'] = intval($data['Width']);
+        $this->properties['Height'] = isset($data['Height']) ? intval($data['Height']) : 0;
+        $this->properties['Width'] = isset($data['Width']) ? intval($data['Width']) : 0;
     }
 }
 
@@ -182,7 +208,7 @@ class ComponentSound extends BaseComponent {
 class ComponentPlayer extends BaseComponent {
     function __construct($data) {
         parent::__construct($data);
-        $this->properties['Source'] = $data['Source'];
+        $this->properties['Source'] = isset($data['Source']) ? $data['Source'] : "";
     }
 }
 
@@ -251,7 +277,7 @@ class ComponentVerticalScrollHandler extends BaseComponent {
 class ComponentSpinner extends BaseComponent {
     function __construct($data) {
         parent::__construct($data);
-        $this->properties['ElementsFromString'] = $elements = explode(', ', $data['ElementsFromString']);
+        $this->properties['ElementsFromString'] = isset($data['ElementsFromString']) ? explode(', ', $data['ElementsFromString']) : array();
         $this->properties['Selection'] = (isset($data['Selection']) ? $data['Selection'] : null);
     }
 }
