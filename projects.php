@@ -460,6 +460,21 @@ abstract class ProjectHandler {
         return $projects;
     }
 
+    static function getAllProjectsByFilename(array $filenames): array {
+        $array = array();
+        $projects = ProjectHandler::getAllProjects();
+        foreach($projects as $project) {
+            foreach($filenames as $filename) {
+                if($project->getFileName() == $filename) {
+                    $array[] = $project;
+                    break;
+                }
+            }
+        }
+
+        return $array;
+    }
+
     static function createBlockByType($blockData): Block {
 
         switch ($blockData['type']) {
