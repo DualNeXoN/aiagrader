@@ -5,21 +5,32 @@ class Project {
     private bool $evaluated = false;
     private bool $runnable = false;
 
-    private ?Interpreter $interpreter = null;
     private ?String $fileName;
     private ?String $projectName;
     private array $components;
+    private array $componentsStartingState;
     private array $blocks;
     private array $variables;
+    private array $results = array();
     private array $logs = array();
+    private bool $needRegrade = true;
 
     function __construct($fileName, $projectName, $components, $blocks, $variables = array()) {
         $this->fileName = $fileName;
         $this->projectName = $projectName;
         $this->components = $components;
+        $this->componentsStartingState = $this->components;
         $this->blocks = $blocks;
         $this->variables = $variables;
         $this->addProjectReferenceToChildren();
+    }
+
+    public function needRegrade(): bool {
+        return $this->needRegrade;
+    }
+
+    public function setNeedRegrade(bool $regrade): void {
+        $this->needRegrade = $regrade;
     }
 
     public function resetLogs(): void {
@@ -136,12 +147,20 @@ class Project {
         return null;
     }
 
-    public function getInterpreter(): Interpreter {
-        return $this->interpreter;
+    public function resetComponents(): void {
+        $this->components = $this->componentsStartingState;
     }
 
-    public function setInterpreter($interpreter): void {
-        $this->interpreter = $interpreter;
+    public function resetResults(): void {
+        $this->results = array();
+    }
+
+    public function addResult(RuleSet $ruleSet, bool $passed): void {
+        $this->results[$ruleSet->getId()] = $passed;
+    }
+
+    public function getResults(): array {
+        return $this->results;
     }
 
     public function getComponentsTypeCount(): array {
@@ -407,32 +426,38 @@ abstract class ProjectHandler {
         return null;
     }
 
-    static function getProjectsContainsBlock(String $blockAlias): array {
-        $array = array();
-        foreach($_SESSION['projects'] as $projectSerialized) {
-            $project = unserialize($projectSerialized);
+    static function getProjectsContainsBlockCount(String $blockAlias, array $projects = array()): int {
+        $count = 0;
+        foreach($projects as $project) {
             foreach($project->getBlocks() as $block) {
                 if($block->getAlias() == $blockAlias) {
-                    $array[] = $project;
+                    $count++;
                     break;
                 }
             }
         }
-        return $array;
+        return $count;
     }
 
-    static function getProjectsContainsComponent(String $componentType): array {
-        $array = array();
-        foreach($_SESSION['projects'] as $projectSerialized) {
-            $project = unserialize($projectSerialized);
+    static function getProjectsContainsComponentCount(String $componentType, array $projects = array()): int {
+        $count = 0;
+        foreach($projects as $project) {
             foreach($project->getComponents() as $component) {
                 if($component->getType() == $componentType) {
-                    $array[] = $project;
+                    $count++;
                     break;
                 }
             }
         }
-        return $array;
+        return $count;
+    }
+
+    static function getAllProjects(): array {
+        $projects = array();
+        if (isset($_SESSION['projects']) && is_array($_SESSION['projects'])) {
+            $projects = array_map('unserialize', $_SESSION['projects']);
+        }
+        return $projects;
     }
 
     static function createBlockByType($blockData): Block {

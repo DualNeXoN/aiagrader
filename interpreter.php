@@ -12,6 +12,7 @@ class Interpreter {
     public function runAll() {
         foreach ($this->projects as $project) {
             $this->project = $project;
+            $project->resetComponents();
             $project->resetLogs();
             $project->setEvaluated(true);
             try {
@@ -29,10 +30,17 @@ class Interpreter {
         }
     }
 
-    public function run(array $ruleSets = null) {
-        $this->project->setInterpreter($this);
-        $this->initialize();
-        $this->interpretBasedOnRules($ruleSets);
+    public function run() {
+        $ruleSets = GradingSystemUtils::getRuleSets();
+        foreach ($this->projects as $project) {
+            $this->project = $project;
+            $this->project->resetResults();
+            if (!$this->project->isRunnable()) continue;
+            $this->project->resetLogs();
+            $this->interpretBasedOnRules($ruleSets);
+            $this->project->setNeedRegrade(false);
+            $this->project->save();
+        }
     }
 
     private function initialize() {
@@ -61,6 +69,37 @@ class Interpreter {
 
     private function interpretBasedOnRules(array $ruleSets) {
         foreach ($ruleSets as $ruleSet) {
+
+            try {
+                $this->project->resetComponents();
+                $this->initialize();
+                $this->project->resetComponents();
+                $this->project->addLog("<h2>Evaluating blocks based on rules</h2>");
+
+                foreach ($ruleSet->getActions() as $action) {
+                    foreach ($this->project->getStartingBlocks() as $startingBlock) {
+                        if ($startingBlock->getType() !== "component_event") continue;
+                        if (($startingBlock->getInstanceName() === $action->getComponentInstance()) && ($startingBlock->getEventName() === $action->getEventName())) {
+                            $this->project->addLog("<h4>Block</h4>");
+                            $startingBlock->evaluate();
+                        }
+                    }
+                }
+
+                $passed = true;
+
+                foreach($ruleSet->getComponentResults() as $result) {
+                    if($this->project->getComponentByName($result->getInstanceName())->getProperty($result->getProperty()) != $result->getExpectedResult()) {
+                        $passed = false;
+                        break;
+                    }
+                }
+
+                $this->project->addResult($ruleSet, $passed);
+
+            } catch (Throwable $e) {
+                $this->project->addResult($ruleSet, false);
+            }
         }
     }
 

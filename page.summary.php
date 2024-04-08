@@ -1,7 +1,11 @@
+<?php
+$projects = ProjectHandler::getAllProjects();
+?>
+
 <div class="container-fluid">
     <div class="d-flex">
         <div class="px-2 py-2">
-            <?= filterButton() ?>
+            <?= filterButton($projects) ?>
         </div>
         <div class="px-2 py-2 flex-grow-1 text-end">
             <button class="btn btn-primary" <?= (isset($_SESSION['projects']) && count($_SESSION['projects']) > 0 ? "" : "disabled") ?>><i class="fa fa-download"></i> Export data</button>
@@ -16,126 +20,127 @@
         <div class="col">
             <?php
             $count = 0;
-            if (isset($_SESSION['projects'])) {
-                foreach ($_SESSION['projects'] as $aiaProject) {
-                    $project = unserialize($aiaProject);
-                    $count++;
+            foreach ($projects as $project) {
+                $pointsPerProject = GradingSystemUtils::getAchievedPointsOfProjectByFileName($project->getFileName());
+                $pointsMax = GradingSystemUtils::getMaxPoints();
+                $count++;
             ?>
-                    <div class="accordion mx-2 my-3" id="summaryList">
-                        <div class="accordion-item" id="summaryItem-<?= $count ?>" data-project-name="<?= $project->getFileName() ?>" grade="0" data-project-state="<?= $project->isEvaluated() ? ($project->isRunnable() ? 1 : 2)  : 0 ?>" data-blocks="<?= implode(',', array_map(function ($block) {
-                                                                                                                                                                                                                                                                return htmlspecialchars($block->getAlias());
-                                                                                                                                                                                                                                                            }, $project->getBlocks())) ?>" data-components="<?= implode(',', array_map(function ($component) {
+                <div class="accordion mx-2 my-3" id="summaryList">
+                    <div class="accordion-item" id="summaryItem-<?= $count ?>" data-project-name="<?= $project->getFileName() ?>" grade="<?= GradingSystemUtils::getAchievedPointsOfProjectByFileName($project->getFileName()) ?>" data-project-state="<?= $project->isEvaluated() ? ($project->isRunnable() ? 1 : 2)  : 0 ?>" data-blocks="<?= implode(',', array_map(function ($block) {
+                                                                                                                                                                                                                                                                                                                                                return htmlspecialchars($block->getAlias());
+                                                                                                                                                                                                                                                                                                                                            }, $project->getBlocks())) ?>" data-components="<?= implode(',', array_map(function ($component) {
                                                                                                                                                                                                                                                                                                                 return htmlspecialchars($component->getType());
                                                                                                                                                                                                                                                                                                             }, $project->getComponents())) ?>">
-                            <h2 class="accordion-header" id="panelsStayOpen-heading<?= $count ?>">
-                                <div class="d-flex">
-                                    <div class="px-2 align-self-center">
-                                        <input class="form-check-input" type="checkbox" id="summaryItemCheckbox-<?= $count ?>" checked></input>
-                                    </div>
-                                    <div class="px-2 align-self-center">
-                                        <a class="btn btn-primary" href="?page=projectdetails&project=<?= $project->getFileName() ?>"><i class="fa fa-eye"></i></a>
-                                    </div>
-                                    <div class="flex-grow-1">
-                                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#panelsStayOpen-collapse<?= $count ?>" aria-expanded="false" aria-controls="panelsStayOpen-collapse<?= $count ?>">
-                                            <div class="d-flex w-100">
-                                                <div><b><?= $project->getFileName() ?></b><br>Components: <?= count($project->getComponents()) ?><br>Blocks: <?= count($project->getBlocks()) ?></div>
-                                                <div class="flex-grow-1 px-2"></div>
-                                                <div class="text-center align-self-center px-2">
-                                                    <span class="badge rounded-pill bg-<?= $project->isEvaluated() ? ($project->isRunnable() ? "success" : "danger") : "secondary" ?>" title="<?= $project->isEvaluated() ? ($project->isRunnable() ? "Project compiled without problems" : "Interpreter threw error while compiling the project") : "Project not compiled yet" ?>" style="width: 80px"><?= $project->isEvaluated() ? ($project->isRunnable() ? "OK <i class='fa fa-check'></i>" : "Errors <i class='fa fa-exclamation'></i>") : "On hold" ?></span>
-                                                    <br><br>
-                                                    <span class="badge rounded-pill bg-secondary" title="Project has no grade yet" style="width: 80px">No grade</span>
-                                                </div>
-                                            </div>
-                                        </button>
-                                    </div>
+                        <h2 class="accordion-header" id="panelsStayOpen-heading<?= $count ?>">
+                            <div class="d-flex">
+                                <div class="px-2 align-self-center">
+                                    <input class="form-check-input" type="checkbox" id="summaryItemCheckbox-<?= $count ?>" checked></input>
                                 </div>
-                            </h2>
-                            <div id="panelsStayOpen-collapse<?= $count ?>" class="accordion-collapse collapse" aria-labelledby="panelsStayOpen-heading<?= $count ?>">
-                                <div class="accordion-body">
-                                    <div class="row justify-content-center">
-                                        <div class="col text-center">
-                                            <div class="row">
-                                                <div class="col-11 text-center">
-                                                    <div class="table-responsive-sm">
-                                                        <table class="table table-bordered border-primary text-black">
-                                                            <thead>
-                                                                <tr>
-                                                                    <td colspan="2"><b>Components in project</b></td>
-                                                                </tr>
-                                                                <tr>
-                                                                    <th scope="col" style="width: 80%">Component</th>
-                                                                    <th scope="col">Count</th>
-                                                                </tr>
-                                                            </thead>
-                                                            <tbody>
-                                                                <?php
-                                                                foreach ($project->getComponentsTypeCount() as $componentType => $componentCount) {
+                                <div class="px-2 align-self-center">
+                                    <a class="btn btn-primary" href="?page=projectdetails&project=<?= $project->getFileName() ?>"><i class="fa fa-eye"></i></a>
+                                </div>
+                                <div class="flex-grow-1">
+                                    <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#panelsStayOpen-collapse<?= $count ?>" aria-expanded="false" aria-controls="panelsStayOpen-collapse<?= $count ?>">
+                                        <div class="d-flex w-100">
+                                            <div><b><?= $project->getFileName() ?></b><br>Components: <?= count($project->getComponents()) ?><br>Blocks: <?= count($project->getBlocks()) ?></div>
+                                            <div class="flex-grow-1 px-2"></div>
+                                            <div class="text-center align-self-center px-2">
+                                                <span class="badge rounded-pill bg-<?= $project->isEvaluated() ? ($project->isRunnable() ? "success" : "danger") : "secondary" ?>" style="width: 90px"><?= $project->isEvaluated() ? ($project->isRunnable() ? "OK <i class='fa fa-check'></i>" : "Errors <i class='fa fa-exclamation'></i>") : "On hold" ?></span>
+                                                <br><br>
+                                                <span class="badge rounded-pill bg-<?= $project->needRegrade() ? "secondary" : ($pointsPerProject == $pointsMax ? "success" : ($pointsPerProject == 0 ? "danger" : "warning")) ?>" style="width: 90px">
+                                                    <?= $project->needRegrade() ? "No grade yet" : GradingSystemUtils::getPercentage($pointsPerProject, $pointsMax) . "%" ?>
+                                                </span>
+                                            </div>
+                                        </div>
+                                    </button>
+                                </div>
+                            </div>
+                        </h2>
+                        <div id="panelsStayOpen-collapse<?= $count ?>" class="accordion-collapse collapse" aria-labelledby="panelsStayOpen-heading<?= $count ?>">
+                            <div class="accordion-body">
+                                <div class="row justify-content-center">
+                                    <div class="col text-center">
+                                        <div class="row">
+                                            <div class="col-11 text-center">
+                                                <div class="table-responsive-sm">
+                                                    <table class="table table-bordered border-primary text-black">
+                                                        <thead>
+                                                            <tr>
+                                                                <td colspan="2"><b>Components in project</b></td>
+                                                            </tr>
+                                                            <tr>
+                                                                <th scope="col" style="width: 80%">Component</th>
+                                                                <th scope="col">Count</th>
+                                                            </tr>
+                                                        </thead>
+                                                        <tbody>
+                                                            <?php
+                                                            foreach ($project->getComponentsTypeCount() as $componentType => $componentCount) {
+                                                                echo "<tr>";
+                                                                echo "<td>" . $componentType . "</td>";
+                                                                echo "<td>" . $componentCount . "</td>";
+                                                                echo "</tr>";
+                                                            } ?>
+                                                        </tbody>
+                                                    </table>
+                                                </div>
+                                                <div class="table-responsive-sm">
+                                                    <table class="table table-bordered border-primary text-black">
+                                                        <thead>
+                                                            <tr>
+                                                                <td colspan="2"><b>Events in project</b></td>
+                                                            </tr>
+                                                            <tr>
+                                                                <th scope="col" style="width: 50%">Instance</th>
+                                                                <th scope="col">Event</th>
+                                                            </tr>
+                                                        </thead>
+                                                        <tbody>
+                                                            <?php
+                                                            foreach ($project->getEvents() as $event) {
+                                                                foreach ($event as $block) {
                                                                     echo "<tr>";
-                                                                    echo "<td>" . $componentType . "</td>";
-                                                                    echo "<td>" . $componentCount . "</td>";
+                                                                    echo "<td>" . $block->getInstanceName() . "</td>";
+                                                                    echo "<td>" . $block->getEventName() . "</td>";
                                                                     echo "</tr>";
-                                                                } ?>
-                                                            </tbody>
-                                                        </table>
-                                                    </div>
-                                                    <div class="table-responsive-sm">
-                                                        <table class="table table-bordered border-primary text-black">
-                                                            <thead>
-                                                                <tr>
-                                                                    <td colspan="2"><b>Events in project</b></td>
-                                                                </tr>
-                                                                <tr>
-                                                                    <th scope="col" style="width: 50%">Instance</th>
-                                                                    <th scope="col">Event</th>
-                                                                </tr>
-                                                            </thead>
-                                                            <tbody>
-                                                                <?php
-                                                                foreach ($project->getEvents() as $event) {
-                                                                    foreach ($event as $block) {
-                                                                        echo "<tr>";
-                                                                        echo "<td>" . $block->getInstanceName() . "</td>";
-                                                                        echo "<td>" . $block->getEventName() . "</td>";
-                                                                        echo "</tr>";
-                                                                    }
-                                                                } ?>
-                                                            </tbody>
-                                                        </table>
-                                                    </div>
-                                                    <div class="table-responsive-sm">
-                                                        <table class="table table-bordered border-primary text-black">
-                                                            <thead>
-                                                                <tr>
-                                                                    <td colspan="2"><b>Blocks in project</b></td>
-                                                                </tr>
-                                                                <tr>
-                                                                    <th scope="col" style="width: 80%">Block</th>
-                                                                    <th scope="col">Count</th>
-                                                                </tr>
-                                                            </thead>
-                                                            <tbody>
-                                                                <?php
-                                                                foreach ($project->getBlocksTypeCount() as $blockType => $blockCount) {
-                                                                    echo "<tr>";
-                                                                    echo "<td>" . $blockType . "</td>";
-                                                                    echo "<td>" . $blockCount . "</td>";
-                                                                    echo "</tr>";
-                                                                } ?>
-                                                            </tbody>
-                                                        </table>
-                                                    </div>
+                                                                }
+                                                            } ?>
+                                                        </tbody>
+                                                    </table>
+                                                </div>
+                                                <div class="table-responsive-sm">
+                                                    <table class="table table-bordered border-primary text-black">
+                                                        <thead>
+                                                            <tr>
+                                                                <td colspan="2"><b>Blocks in project</b></td>
+                                                            </tr>
+                                                            <tr>
+                                                                <th scope="col" style="width: 80%">Block</th>
+                                                                <th scope="col">Count</th>
+                                                            </tr>
+                                                        </thead>
+                                                        <tbody>
+                                                            <?php
+                                                            foreach ($project->getBlocksTypeCount() as $blockType => $blockCount) {
+                                                                echo "<tr>";
+                                                                echo "<td>" . $blockType . "</td>";
+                                                                echo "<td>" . $blockCount . "</td>";
+                                                                echo "</tr>";
+                                                            } ?>
+                                                        </tbody>
+                                                    </table>
                                                 </div>
                                             </div>
                                         </div>
-                                        <div class="col text-center">
-                                            <div class="row">
-                                                <div class="col-11">
-                                                    <?php if (count($project->getLogs()) > 0) { ?>
-                                                        <div class="px-2 text-start border border-primary">
-                                                            <div><?php foreach ($project->getLogs() as $log) echo $log ?></div>
-                                                        </div>
-                                                    <?php } ?>
-                                                </div>
+                                    </div>
+                                    <div class="col text-center">
+                                        <div class="row">
+                                            <div class="col-11">
+                                                <?php if (count($project->getLogs()) > 0) { ?>
+                                                    <div class="px-2 text-start border border-primary">
+                                                        <div><?php foreach ($project->getLogs() as $log) echo $log ?></div>
+                                                    </div>
+                                                <?php } ?>
                                             </div>
                                         </div>
                                     </div>
@@ -143,8 +148,8 @@
                             </div>
                         </div>
                     </div>
+                </div>
             <?php
-                }
             }
             ?>
         </div>
@@ -350,7 +355,7 @@
 
 
 <?php
-function blockFilter() {
+function blockFilter(&$projects) {
 ?>
     <div class="my-2">
         <div class="d-flex">
@@ -368,7 +373,7 @@ function blockFilter() {
         <div style="height: 200px; overflow-y: scroll">
             <?php foreach (Block::BLOCK_ALIASES as $index => $option) : ?>
                 <?php
-                $count = count(ProjectHandler::getProjectsContainsBlock($option));
+                $count = ProjectHandler::getProjectsContainsBlockCount($option, $projects);
                 if ($count > 0) :
                 ?>
                     <div class="form-check form-check-block">
@@ -384,7 +389,7 @@ function blockFilter() {
 <?php
 }
 
-function componentFilter() {
+function componentFilter(&$projects) {
 ?>
     <div class="my-2">
         <div class="d-flex">
@@ -403,8 +408,8 @@ function componentFilter() {
             <?php
             $array = BaseComponent::COMPONENT_ALIASES;
             sort($array);
-            foreach ($array as $index => $option) :
-                $count = count(ProjectHandler::getProjectsContainsComponent($option));
+            foreach ($array as $option) :
+                $count = ProjectHandler::getProjectsContainsComponentCount($option, $projects);
                 if ($count > 0) :
             ?>
                     <div class="form-check form-check-component">
@@ -447,7 +452,7 @@ function nameFilter() {
 <?php
 }
 
-function filterButton() {
+function filterButton(&$projects) {
 ?>
     <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#filterModal"><i class="fa fa-filter"></i> Filter</button>
     <div class="modal fade text-black" id="filterModal" tabindex="-1" aria-labelledby="filterModalLabel" aria-hidden="true">
@@ -464,10 +469,10 @@ function filterButton() {
                             <?= stateFilter() ?>
                         </div>
                         <div class="col">
-                            <?= componentFilter() ?>
+                            <?= componentFilter($projects) ?>
                         </div>
                         <div class="col">
-                            <?= blockFilter() ?>
+                            <?= blockFilter($projects) ?>
                         </div>
                     </div>
                 </div>
