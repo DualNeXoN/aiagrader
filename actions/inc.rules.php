@@ -10,8 +10,6 @@ if (!isset($_SESSION)) {
 if (isset($_POST['rule-delete-all'])) {
     unset($_SESSION['rules']);
     resetProjectResults();
-    header('Location: ' . $_SERVER['HTTP_REFERER']);
-    exit;
 } else if (isset($_POST['rule-delete-by-id'])) {
     $ruleSetId = $_POST['ruleset-id'];
 
@@ -23,19 +21,15 @@ if (isset($_POST['rule-delete-all'])) {
         }
     }
     resetProjectResults();
-
-    header('Location: ' . $_SERVER['HTTP_REFERER']);
 } else if (isset($_POST['add-rule'])) {
     $newRule = new RuleSet(array(), array(), 0, "New Rule");
     $newRule->save();
     resetProjectResults();
-    header('Location: ' . $_SERVER['HTTP_REFERER']);
 } else if (isset($_POST['action-delete'])) {
     $ruleSetId = $_POST['ruleset-id'];
     $actionIndex = $_POST['action-index'];
     GradingSystemUtils::getRuleSetById($ruleSetId)->removeActionByIndex($actionIndex);
     resetProjectResults();
-    header('Location: ' . $_SERVER['HTTP_REFERER']);
 } else if (isset($_POST['action-save'])) {
     $ruleSetId = $_POST['ruleset-id'];
     $actionIndex = $_POST['action-index'];
@@ -49,7 +43,6 @@ if (isset($_POST['rule-delete-all'])) {
     $action->setEventName($eventName);
     $ruleset->save();
     resetProjectResults();
-    header('Location: ' . $_SERVER['HTTP_REFERER']);
 } else if (isset($_POST['action-add'])) {
     $ruleSetId = $_POST['ruleset-id'];
     $componentInstance = $_POST['action-component-instance'];
@@ -60,13 +53,11 @@ if (isset($_POST['rule-delete-all'])) {
     $ruleset->addAction($action);
     $ruleset->save();
     resetProjectResults();
-    header('Location: ' . $_SERVER['HTTP_REFERER']);
 } else if (isset($_POST['result-delete'])) {
     $ruleSetId = $_POST['ruleset-id'];
     $resultIndex = $_POST['result-index'];
     GradingSystemUtils::getRuleSetById($ruleSetId)->removeResultByIndex($resultIndex);
     resetProjectResults();
-    header('Location: ' . $_SERVER['HTTP_REFERER']);
 } else if (isset($_POST['result-add'])) {
     $ruleSetId = $_POST['ruleset-id'];
     $componentInstance = $_POST['result-component-instance'];
@@ -78,7 +69,6 @@ if (isset($_POST['rule-delete-all'])) {
     $ruleset->addResult($componentResult);
     $ruleset->save();
     resetProjectResults();
-    header('Location: ' . $_SERVER['HTTP_REFERER']);
 } else if (isset($_POST['result-save'])) {
     $ruleSetId = $_POST['ruleset-id'];
     $resultIndex = $_POST['result-index'];
@@ -94,7 +84,6 @@ if (isset($_POST['rule-delete-all'])) {
     $componentResult->setExpectedResult($expectedValue);
     $ruleset->save();
     resetProjectResults();
-    header('Location: ' . $_SERVER['HTTP_REFERER']);
 } else if (isset($_POST['ruleset-save'])) {
     $ruleSetId = $_POST['ruleset-id'];
     $rulesetDescription = $_POST['ruleset-description'];
@@ -104,10 +93,26 @@ if (isset($_POST['rule-delete-all'])) {
     $ruleset->setPoints($rulesetPoints);
     $ruleset->save();
     resetProjectResults();
-    header('Location: ' . $_SERVER['HTTP_REFERER']);
+} else if (isset($_POST['export-rules'])) {
+    $content = json_encode($_SESSION['rules']);
+    header('Content-Type: application/json');
+    header('Content-Disposition: attachment; filename="rules.json"');
+    header('Content-Length: ' . strlen($content));
+    echo $content;
+    exit;
+} else if (isset($_POST['import-rules']) && isset($_FILES['jsonFile']) && $_FILES['jsonFile']['error'] == 0) {
+    
+    $jsonContent = file_get_contents($_FILES['jsonFile']['tmp_name']);
+    $data = json_decode($jsonContent, true);
+    if ($data !== null) {
+        $_SESSION['rules'] = $data;
+        resetProjectResults();
+    } else {
+        echo "Error: Failed to decode JSON.";
+    }
 }
 
-//header('Location: ' . $_SERVER['HTTP_REFERER']);
+header('Location: ' . $_SERVER['HTTP_REFERER']);
 
 function resetProjectResults() {
     foreach (ProjectHandler::getAllProjects() as $project) {

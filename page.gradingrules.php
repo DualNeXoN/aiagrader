@@ -13,6 +13,14 @@
                 <button class="btn btn-danger w-100" type="submit" name="rule-delete-all">Reset rules</button>
             </form>
         </div>
+        <div class="col-1 text-center">
+            <form action="actions/inc.rules.php" method="post">
+                <button class="btn btn-primary w-100" type="submit" name="export-rules">Export rules</button>
+            </form>
+        </div>
+        <div class="col-1 text-center">
+            <?= importRules() ?>
+        </div>
     </div>
     <div class="row justify-content-center">
         <div class="col">
@@ -368,5 +376,34 @@ function generateRulesetEditButton(String $rulesetId, String $description, int $
         </form>
     </div>
 
+<?php
+}
+
+function importRules(): void {
+?>
+    <!-- Button trigger modal -->
+    <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#importModal">Import rules</button>
+
+    <!-- Modal -->
+    <div class="modal fade text-black" id="importModal" tabindex="-1" aria-labelledby="importModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <form action="actions/inc.rules.php" method="post" enctype="multipart/form-data">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="importModalLabel">Import rules</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        Select file to upload:
+                        <input type="file" name="jsonFile" id="jsonFile">
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                        <input class="btn btn-primary" type="submit" value="Upload File" name="import-rules">
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
 <?php
 }
