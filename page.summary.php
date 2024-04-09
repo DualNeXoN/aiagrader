@@ -14,7 +14,9 @@ $projects = ProjectHandler::getAllProjects();
             <?= filterButton($projects) ?>
         </div>
         <div class="px-2 py-2 flex-grow-1 text-end">
-            <button class="btn btn-primary" <?= (isset($_SESSION['projects']) && count($_SESSION['projects']) > 0 ? "" : "disabled") ?>><i class="fa fa-download"></i> Export data</button>
+            <form action="actions/inc.summaryexport.php" method="post">
+                <button class="btn btn-primary" <?= (isset($_SESSION['projects']) && count($_SESSION['projects']) > 0 ? "" : "disabled") ?> type="submit" name="export-data"><i class="fa fa-download"></i> Export data</button>
+            </form>
         </div>
         <div class="px-2 py-2">
             <form action="actions/inc.evaluate.php" method="post">
