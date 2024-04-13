@@ -4,11 +4,7 @@
 <?php
 session_start();
 require_once("head.php");
-require_once("projects.php");
-require_once("blocks.php");
-require_once("components.php");
-require_once("interpreter.php");
-require_once("rules.php");
+require_once("classes.php");
 ?>
 
 <body>
@@ -23,25 +19,10 @@ require_once("rules.php");
                     <?php if(isset($_GET["page"]) && $_GET["page"] == "projectdetails") echo '<a class="btn btn-primary" href="?page=summary" style="margin: 0 5px"><i class="fa fa-arrow-left"></i></a>'?>
                 </div>
             </nav>
-            <?php
-            $pageFilename = 'page.dashboard.php';
-            if(!isset($_GET['page'])) {
-                require $pageFilename;
-            } else {
-                $pageFilename = 'page.' . $_GET['page'] . '.php';
-                if (file_exists($pageFilename)) {
-                    require $pageFilename;
-                } else {
-                    require('404.php');
-                }
-            }
-            ?>
+            <?php require_once("contentHandler.php"); ?>
         </div>
     </div>
-    <!-- Bootstrap core JS-->
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/js/bootstrap.bundle.min.js"></script>
-    <!-- Core theme JS-->
-    <script src="js/scripts.js"></script>
+    <?php require_once("libraries.scripts.php"); ?>
 </body>
 
 </html>
