@@ -39,6 +39,9 @@
                                             <div class="d-flex w-100">
                                                 <div><b><?= $ruleSet->getDescription() ?></b></div>
                                                 <div class="mx-3">
+                                                    <span class="badge rounded-pill bg-<?= count($ruleSet->getInputs()) > 0 ? "primary" : "danger" ?>" style="width: auto">Inputs: <?= count($ruleSet->getInputs()) ?></span>
+                                                </div>
+                                                <div class="me-3">
                                                     <span class="badge rounded-pill bg-<?= count($ruleSet->getActions()) > 0 ? "primary" : "danger" ?>" style="width: auto">Actions: <?= count($ruleSet->getActions()) ?></span>
                                                 </div>
                                                 <div>
@@ -70,8 +73,60 @@
                                                 <div class="col text-center">
                                                     <div class="accordion" id="accordionPanelsStayOpen">
                                                         <div class="accordion-item">
+                                                            <h2 class="accordion-header" id="panelsStayOpen-heading-inputs-<?= $ruleSet->getId() ?>">
+                                                                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#panelsStayOpen-collapse-inputs-<?= $ruleSet->getId() ?>" aria-expanded="false" aria-controls="panelsStayOpen-collapse-inputs-<?= $ruleSet->getId() ?>"><b>Inputs</b></button>
+                                                            </h2>
+                                                            <div id="panelsStayOpen-collapse-inputs-<?= $ruleSet->getId() ?>" class="accordion-collapse collapse" aria-labelledby="panelsStayOpen-heading-inputs-<?= $ruleSet->getId() ?>">
+                                                                <div class="accordion-body">
+                                                                    <div class="table-responsive-sm">
+                                                                        <table class="table table-bordered border-primary text-black">
+                                                                            <thead>
+                                                                                <tr>
+                                                                                    <th scope="col" style="width: 30%">Instance</th>
+                                                                                    <th scope="col">Property</th>
+                                                                                    <th scope="col">Input value</th>
+                                                                                    <th scope="col" style="width: 100px"></th>
+                                                                                </tr>
+                                                                            </thead>
+                                                                            <tbody>
+                                                                                <?php
+                                                                                for ($index = 0; $index < count($ruleSet->getInputs()); $index++) :
+                                                                                    $input = $ruleSet->getInputs()[$index];
+                                                                                ?>
+                                                                                    <form action="actions/inc.rules.php" method="post">
+                                                                                        <tr>
+                                                                                            <td>
+                                                                                                <input class="form-control text-center my-2" type="text" name="input-component-instance" value="<?= $input->getComponentInstance() ?>"></input>
+                                                                                            </td>
+                                                                                            <td>
+                                                                                                <div class="d-flex"><?= generateInputSelect($ruleSet->getId(), $index) ?></div>
+                                                                                            </td>
+                                                                                            <td>
+                                                                                                <input class="form-control text-center my-2" type="text" name="input-value" value="<?= $input->getInputValue() ?>"></input>
+                                                                                            </td>
+                                                                                            <td>
+                                                                                                <input type="text" name="ruleset-id" value="<?= $ruleSet->getId() ?>" hidden></input>
+                                                                                                <input type="text" name="input-index" value="<?= $index ?>" hidden></input>
+                                                                                                <button class="btn btn-success btn-sm mx-1 my-2" name="input-save"><i class="fa fa-save"></i></button>
+                                                                                                <button class="btn btn-danger btn-sm mx-1 my-2" name="input-delete"><i class="fa fa-trash"></i></button>
+                                                                                            </td>
+                                                                                        </tr>
+                                                                                    </form>
+                                                                                <?php endfor; ?>
+                                                                                <tr>
+                                                                                    <th class="text-center" colspan="4">
+                                                                                        <?= generateAddInputButton($ruleSet->getId()) ?>
+                                                                                    </th>
+                                                                                </tr>
+                                                                            </tbody>
+                                                                        </table>
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                        <div class="accordion-item">
                                                             <h2 class="accordion-header" id="panelsStayOpen-heading-actions-<?= $ruleSet->getId() ?>">
-                                                                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#panelsStayOpen-collapse-actions-<?= $ruleSet->getId() ?>" aria-expanded="false" aria-controls="panelsStayOpen-collapse-actions-<?= $ruleSet->getId() ?>"><b>Actions / Inputs</b></button>
+                                                                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#panelsStayOpen-collapse-actions-<?= $ruleSet->getId() ?>" aria-expanded="false" aria-controls="panelsStayOpen-collapse-actions-<?= $ruleSet->getId() ?>"><b>Actions</b></button>
                                                             </h2>
                                                             <div id="panelsStayOpen-collapse-actions-<?= $ruleSet->getId() ?>" class="accordion-collapse collapse" aria-labelledby="panelsStayOpen-heading-actions-<?= $ruleSet->getId() ?>">
                                                                 <div class="accordion-body">
@@ -221,11 +276,47 @@
             });
         }
     }
+
+    function filterInputOptionsById(rulesetId, index) {
+        const componentSelect = (index == "-1" ? document.getElementById('select-input-component-' + rulesetId) : document.getElementById('select-input-component-' + rulesetId + "-" + index));
+        const propertiesSelect = (index == "-1" ? document.getElementById('select-input-property-' + rulesetId) : document.getElementById('select-input-property-' + rulesetId + "-" + index));
+        const allProperties = <?php echo json_encode(Input::PROPERTIES); ?>;
+
+        const selectedComponent = componentSelect.value;
+        propertiesSelect.innerHTML = '';
+
+        if (allProperties[selectedComponent]) {
+            allProperties[selectedComponent].forEach(property => {
+                const option = document.createElement('option');
+                option.value = property;
+                option.text = property;
+                propertiesSelect.appendChild(option);
+            });
+        }
+    }
 </script>
 
 <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
 
 <?php
+
+function generateInputSelect(String $rulesetId, String $index): void {
+?>
+    <select class="form-select my-2" id="select-input-component-<?= $rulesetId ?>-<?= $index ?>" name="select-input-component-<?= $rulesetId ?>-<?= $index ?>" onchange="filterInputOptionsById('<?= $rulesetId ?>', '<?= $index ?>')">
+        <?php foreach (Input::PROPERTIES as $component => $propertyList) : ?>
+            <option value="<?= $component ?>" <?= GradingSystemUtils::getRuleSetById($rulesetId)->getInputs()[$index]->getPropertyKey() == $component ? "selected" : "" ?>><?= $component ?></option>
+        <?php endforeach; ?>
+    </select>
+    <select class="form-select my-2" id="select-input-property-<?= $rulesetId ?>-<?= $index ?>" name="select-input-property-<?= $rulesetId ?>-<?= $index ?>">
+        <?php foreach (Input::PROPERTIES as $component => $propertyList) :
+            if (GradingSystemUtils::getRuleSetById($rulesetId)->getInputs()[$index]->getPropertyKey() != $component) continue;
+            foreach ($propertyList as $property) : ?>
+                <option value="<?= $property ?>" <?= GradingSystemUtils::getRuleSetById($rulesetId)->getInputs()[$index]->getProperty() == $property ? "selected" : "" ?>><?= $property ?></option>
+        <?php endforeach;
+        endforeach; ?>
+    </select>
+<?php
+}
 
 function generateActionSelect(String $rulesetId, String $index): void {
 ?>
@@ -262,6 +353,50 @@ function generatePropertySelect(String $rulesetId, String $index): void {
     </select>
 <?php
 }
+
+function generateAddInputButton(String $rulesetId): void {
+    ?>
+        <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#modalInputAdd-<?= $rulesetId ?>">Add input</button>
+    
+        <div class="modal fade" id="modalInputAdd-<?= $rulesetId ?>" tabindex="-1" aria-labelledby="modalInputAdd-<?= $rulesetId ?>Label" aria-hidden="true">
+            <form action="actions/inc.rules.php" method="post">
+                <div class="modal-dialog">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title" id="modalInputAdd-<?= $rulesetId ?>Label">Add input dialog</h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                        </div>
+                        <div class="modal-body">
+                            <input class="form-control text-center my-2" type="text" name="input-component-instance" value="" placeholder="Instance name" required></input>
+                            <div class="d-flex">
+                                <select class="form-select my-2" id="select-input-component-<?= $rulesetId ?>" name="select-input-component-<?= $rulesetId ?>" onchange="filterInputOptionsById('<?= $rulesetId ?>', '-1')">
+                                    <?php foreach (Input::PROPERTIES as $component => $propertyList) : ?>
+                                        <option value="<?= $component ?>"><?= $component ?></option>
+                                    <?php endforeach; ?>
+                                </select>
+                                <select class="form-select my-2" id="select-input-property-<?= $rulesetId ?>" name="select-input-property-<?= $rulesetId ?>">
+                                    <?php foreach (Input::PROPERTIES as $component => $propertyList) :
+                                        if ($component != "Button") continue;
+                                        foreach ($propertyList as $property) : ?>
+                                            <option value="<?= $property ?>"><?= $property ?></option>
+                                    <?php endforeach;
+                                    endforeach; ?>
+                                </select>
+                            </div>
+                            <input class="form-control text-center my-2" type="text" name="input-value" value="" placeholder="Input value" required></input>
+                            <input type="text" name="ruleset-id" value="<?= $rulesetId ?>" hidden></input>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                            <button type="submit" class="btn btn-primary" name="input-add">Add</button>
+                        </div>
+                    </div>
+                </div>
+            </form>
+        </div>
+    
+    <?php
+    }
 
 function generateAddActionButton(String $rulesetId): void {
 ?>

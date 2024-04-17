@@ -226,7 +226,7 @@ class BlockComponentMethod extends Block {
         $this->alias = "Method";
         $this->componentType = $data['component_type'];
         $this->methodName = $data['method_name'];
-        $this->instanceName = $data['instance_name'];
+        $this->instanceName = isset($data['instance_name']) ? $data['instance_name'] : "";
         $this->interpreterText = "Method <b>" . $this->methodName . "</b> of instance <b>" . $this->instanceName . "</b> fired<br>";
     }
 

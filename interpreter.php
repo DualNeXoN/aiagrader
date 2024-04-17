@@ -74,6 +74,7 @@ class Interpreter {
                 $this->project->resetComponents();
                 $this->initialize();
                 $this->project->resetComponents();
+                $this->processInputs($ruleSet);
                 $this->project->addLog("<h2>Evaluating blocks based on rules</h2>");
 
                 foreach ($ruleSet->getActions() as $action) {
@@ -103,18 +104,26 @@ class Interpreter {
         }
     }
 
+    private function processInputs(RuleSet $ruleSet): void {
+        foreach($ruleSet->getInputs() as $input) {
+            $this->project->getComponentByName($input->getComponentInstance())->setProperty($input->getProperty(), $input->getInputValue());
+        }
+    }
+
     private function interpretAll() {
-        try {
-            $this->project->addLog("<h2>Evaluating event blocks based on rules</h2>");
+        $this->project->addLog("<h2>Evaluating event blocks based on rules</h2>");
             foreach ($this->project->getStartingBlocks() as $startingBlock) {
                 if ($startingBlock->getType() === "global_declaration") continue;
                 if ($startingBlock->getType() === "component_event" && $startingBlock->getEventName() === "Initialize") continue;
                 $this->project->addLog("<h4>Block</h4>");
-                $startingBlock->evaluate();
+                try {
+                    $startingBlock->evaluate();
+                } catch (Throwable $e) {
+                    if($e->getMessage() != "Division by zero") {
+                        throw new Exception($e->getMessage());
+                    }
+                }
             }
-        } catch (Throwable $e) {
-            throw new Exception($e->getMessage());
-        }
     }
 
     public function getProject(): Project {

@@ -22,8 +22,39 @@ if (isset($_POST['rule-delete-all'])) {
     }
     resetProjectResults();
 } else if (isset($_POST['add-rule'])) {
-    $newRule = new RuleSet(array(), array(), 0, "New Rule");
+    $newRule = new RuleSet(array(), array(), array(), 0, "New Rule");
     $newRule->save();
+    resetProjectResults();
+} else if (isset($_POST['input-delete'])) {
+    $ruleSetId = $_POST['ruleset-id'];
+    $inputIndex = $_POST['input-index'];
+    GradingSystemUtils::getRuleSetById($ruleSetId)->removeInputByIndex($inputIndex);
+    resetProjectResults();
+} else if (isset($_POST['input-save'])) {
+    $ruleSetId = $_POST['ruleset-id'];
+    $inputIndex = $_POST['input-index'];
+    $componentInstance = $_POST['input-component-instance'];
+    $propertyKey = $_POST['select-input-component-' . $ruleSetId . "-" . $inputIndex];
+    $componentProperty = $_POST['select-input-property-' . $ruleSetId . "-" . $inputIndex];
+    $inputValue = $_POST['input-value'];
+    $ruleset = GradingSystemUtils::getRuleSetById($ruleSetId);
+    $input = $ruleset->getInputs()[$inputIndex];
+    $input->setComponentInstance($componentInstance);
+    $input->setProperty($componentProperty);
+    $input->setPropertyKey($propertyKey);
+    $input->setInputValue($inputValue);
+    $ruleset->save();
+    resetProjectResults();
+} else if (isset($_POST['input-add'])) {
+    $ruleSetId = $_POST['ruleset-id'];
+    $componentInstance = $_POST['input-component-instance'];
+    $propertyKey = $_POST['select-input-component-' . $ruleSetId];
+    $property = $_POST['select-input-property-' . $ruleSetId];
+    $inputValue = $_POST['input-value'];
+    $ruleset = GradingSystemUtils::getRuleSetById($ruleSetId);
+    $input = new Input($componentInstance, $property, $inputValue, $propertyKey);
+    $ruleset->addInput($input);
+    $ruleset->save();
     resetProjectResults();
 } else if (isset($_POST['action-delete'])) {
     $ruleSetId = $_POST['ruleset-id'];

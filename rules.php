@@ -3,13 +3,15 @@
 class RuleSet {
 
     private String $id;
+    private array $inputs;
     private array $actions;
     private array $componentResults;
     private String $description;
     private int $points;
 
-    function __construct(array $actions, array $componentResults, int $points = 0, String $description = "RuleSet") {
+    function __construct(array $inputs, array $actions, array $componentResults, int $points = 0, String $description = "RuleSet") {
         $this->id = uniqid();
+        $this->inputs = $inputs;
         $this->actions = $actions;
         $this->componentResults = $componentResults;
         $this->points = $points;
@@ -34,6 +36,20 @@ class RuleSet {
 
     public function setDescription(String $description): void {
         $this->description = $description;
+    }
+
+    public function getInputs() {
+        return $this->inputs;
+    }
+
+    public function removeInputByIndex(int $index): void {
+        unset($this->inputs[$index]);
+        $this->inputs = array_values($this->inputs);
+        $this->save();
+    }
+
+    public function addInput(Input $input): void {
+        $this->inputs[] = $input;
     }
 
     public function getActions(): array {
@@ -69,6 +85,84 @@ class RuleSet {
         foreach($_SESSION['projects'] as $projectData) {
             unserialize($projectData)->setNeedRegrade(true);
         }
+    }
+
+}
+
+class Input {
+
+    const PROPERTIES = [
+        "Button" => ["Text", "Image", "Width", "Height", "BackgroundColor", "TextColor", "Enabled"],
+        "Label" => ["Text", "TextColor", "FontSize", "FontTypeface", "HasMargins"],
+        "TextBox" => ["Text", "Hint", "Width", "Height", "BackgroundColor", "TextColor", "Enabled", "MultiLine"],
+        "Slider" => ["MinValue", "MaxValue", "ThumbPosition", "Visible"],
+        "CheckBox" => ["Text", "Checked", "Enabled"],
+        "ListView" => ["ElementsFromString", "BackgroundColor", "TextColor", "SelectionColor"],
+        "Spinner" => ["Elements", "Prompt", "Selection"],
+        "Image" => ["Picture", "Width", "Height", "ScalePictureToFit"],
+        "VideoPlayer" => ["Source", "FullScreen", "Volume"],
+        "WebViewer" => ["HomeUrl", "CurrentUrl", "CanGoBack", "CanGoForward"],
+        "Camera" => ["ImageFile", "UseFront", "Flash"],
+        "AccelerometerSensor" => ["Enabled", "Sensitivity"],
+        "LocationSensor" => ["Latitude", "Longitude", "ProviderName", "Accuracy", "Enabled"],
+        "OrientationSensor" => ["Angle", "Magnitude", "Pitch", "Roll", "Azimuth"],
+        "GyroscopeSensor" => ["XAngularVelocity", "YAngularVelocity", "ZAngularVelocity", "Enabled"],
+        "ProximitySensor" => ["Distance", "Available", "Enabled"],
+        "LightSensor" => ["LightLevel", "Enabled"],
+        "Clock" => ["TimerInterval", "TimerEnabled", "TimeZone"],
+        "MediaPlayer" => ["Source", "Loop", "Volume"],
+        "Sound" => ["Source", "Volume"],
+        "BluetoothClient" => ["AddressesAndNames", "Secure", "Enabled"],
+        "BluetoothServer" => ["IsAccepting", "Secure", "Enabled"],
+        "SpeechRecognizer" => ["Language", "Result"],
+        "TextToSpeech" => ["Language", "Pitch", "SpeechRate"],
+        "Web" => ["Url", "RequestHeaders", "ResponseFileName"],
+        "FirebaseDB" => ["FirebaseURL", "ProjectBucket", "FirebaseToken"],
+        "TinyDB" => ["Namespace"],
+    ];
+
+    private String $componentInstance;
+    private String $property;
+    private String $inputValue;
+    private mixed $propertyKey;
+
+    function __construct(String $componentInstance, String $property, String $inputValue, $propertyKey = "Button") {
+        $this->componentInstance = $componentInstance;
+        $this->property = $property;
+        $this->inputValue = $inputValue;
+        $this->propertyKey = $propertyKey;
+    }
+
+    public function getComponentInstance(): String {
+        return $this->componentInstance;
+    }
+
+    public function setComponentInstance(String $componentInstance): void {
+        $this->componentInstance = $componentInstance;
+    }
+
+    public function getProperty(): String {
+        return $this->property;
+    }
+
+    public function setProperty(String $property): void {
+        $this->property = $property;
+    }
+
+    public function getPropertyKey(): String {
+        return $this->propertyKey;
+    }
+
+    public function setPropertyKey(String $propertyKey): void {
+        $this->propertyKey = $propertyKey;
+    }
+
+    public function getInputValue(): String {
+        return $this->inputValue;
+    }
+
+    public function setInputValue(String $inputValue): void {
+        $this->inputValue = $inputValue;
     }
 
 }
