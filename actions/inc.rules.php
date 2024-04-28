@@ -15,7 +15,7 @@ if (isset($_POST['rule-delete-all'])) {
 
     foreach ($_SESSION['rules'] as $key => $ruleSetData) {
         $ruleSet = unserialize($ruleSetData);
-        if($ruleSet->getId() == $ruleSetId) {
+        if ($ruleSet->getId() == $ruleSetId) {
             unset($_SESSION['rules'][$key]);
             break;
         }
@@ -132,7 +132,7 @@ if (isset($_POST['rule-delete-all'])) {
     echo $content;
     exit;
 } else if (isset($_POST['import-rules']) && isset($_FILES['jsonFile']) && $_FILES['jsonFile']['error'] == 0) {
-    
+
     $jsonContent = file_get_contents($_FILES['jsonFile']['tmp_name']);
     $data = json_decode($jsonContent, true);
     if ($data !== null) {

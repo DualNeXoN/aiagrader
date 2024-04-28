@@ -89,15 +89,14 @@ class Interpreter {
 
                 $passed = true;
 
-                foreach($ruleSet->getComponentResults() as $result) {
-                    if($this->project->getComponentByName($result->getInstanceName())->getProperty($result->getProperty()) != $result->getExpectedResult()) {
+                foreach ($ruleSet->getComponentResults() as $result) {
+                    if ($this->project->getComponentByName($result->getInstanceName())->getProperty($result->getProperty()) != $result->getExpectedResult()) {
                         $passed = false;
                         break;
                     }
                 }
 
                 $this->project->addResult($ruleSet, $passed);
-
             } catch (Throwable $e) {
                 $this->project->addResult($ruleSet, false);
             }
@@ -105,25 +104,25 @@ class Interpreter {
     }
 
     private function processInputs(RuleSet $ruleSet): void {
-        foreach($ruleSet->getInputs() as $input) {
+        foreach ($ruleSet->getInputs() as $input) {
             $this->project->getComponentByName($input->getComponentInstance())->setProperty($input->getProperty(), $input->getInputValue());
         }
     }
 
     private function interpretAll() {
         $this->project->addLog("<h2>Evaluating event blocks based on rules</h2>");
-            foreach ($this->project->getStartingBlocks() as $startingBlock) {
-                if ($startingBlock->getType() === "global_declaration") continue;
-                if ($startingBlock->getType() === "component_event" && $startingBlock->getEventName() === "Initialize") continue;
-                $this->project->addLog("<h4>Block</h4>");
-                try {
-                    $startingBlock->evaluate();
-                } catch (Throwable $e) {
-                    if($e->getMessage() != "Division by zero") {
-                        throw new Exception($e->getMessage());
-                    }
+        foreach ($this->project->getStartingBlocks() as $startingBlock) {
+            if ($startingBlock->getType() === "global_declaration") continue;
+            if ($startingBlock->getType() === "component_event" && $startingBlock->getEventName() === "Initialize") continue;
+            $this->project->addLog("<h4>Block</h4>");
+            try {
+                $startingBlock->evaluate();
+            } catch (Throwable $e) {
+                if ($e->getMessage() != "Division by zero") {
+                    throw new Exception($e->getMessage());
                 }
             }
+        }
     }
 
     public function getProject(): Project {

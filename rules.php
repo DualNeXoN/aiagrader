@@ -82,11 +82,10 @@ class RuleSet {
 
     public function save(): void {
         $_SESSION['rules'][$this->id] = serialize($this);
-        foreach($_SESSION['projects'] as $projectData) {
+        foreach ($_SESSION['projects'] as $projectData) {
             unserialize($projectData)->setNeedRegrade(true);
         }
     }
-
 }
 
 class Input {
@@ -164,7 +163,6 @@ class Input {
     public function setInputValue(String $inputValue): void {
         $this->inputValue = $inputValue;
     }
-
 }
 
 class Action {
@@ -230,7 +228,6 @@ class Action {
     public function setEventKey(String $eventKey): void {
         $this->eventKey = $eventKey;
     }
-
 }
 
 class ComponentResult {
@@ -266,7 +263,7 @@ class ComponentResult {
         "TinyDB" => ["Namespace"],
         "File" => [],
     ];
-    
+
 
     private String $instanceName;
     private String $property;
@@ -311,15 +308,14 @@ class ComponentResult {
     public function setExpectedResult(mixed $expectedResult): void {
         $this->expectedResult = $expectedResult;
     }
-
 }
 
 abstract class GradingSystemUtils {
 
     public static function getMaxPoints(): int {
-        if(!isset($_SESSION['rules'])) return -1;
+        if (!isset($_SESSION['rules'])) return -1;
         $points = 0;
-        foreach(GradingSystemUtils::getRuleSets() as $ruleSet) {
+        foreach (GradingSystemUtils::getRuleSets() as $ruleSet) {
             $points += $ruleSet->getPoints();
         }
         return $points;
@@ -328,25 +324,25 @@ abstract class GradingSystemUtils {
     public static function getAchievedPointsOfProjectByFileName(String $fileName): int {
         $points = 0;
         $results = unserialize($_SESSION['projects'][$fileName])->getResults();
-        foreach(GradingSystemUtils::getRuleSets() as $ruleSet) {
-            if(!isset($results[$ruleSet->getId()])) continue;
-            if($results[$ruleSet->getId()]) $points += $ruleSet->getPoints();
+        foreach (GradingSystemUtils::getRuleSets() as $ruleSet) {
+            if (!isset($results[$ruleSet->getId()])) continue;
+            if ($results[$ruleSet->getId()]) $points += $ruleSet->getPoints();
         }
         return $points;
     }
 
     public static function getRuleSets(): array {
         $array = array();
-        if(!isset($_SESSION['rules'])) return $array;
-        foreach($_SESSION['rules'] as $ruleSetData) {
+        if (!isset($_SESSION['rules'])) return $array;
+        foreach ($_SESSION['rules'] as $ruleSetData) {
             $array[] = unserialize($ruleSetData);
         }
         return $array;
     }
 
     public static function getRuleSetById(String $id): ?RuleSet {
-        foreach(GradingSystemUtils::getRuleSets() as $ruleSet) {
-            if($ruleSet->getId() == $id) return $ruleSet;
+        foreach (GradingSystemUtils::getRuleSets() as $ruleSet) {
+            if ($ruleSet->getId() == $id) return $ruleSet;
         }
         return null;
     }
@@ -354,9 +350,8 @@ abstract class GradingSystemUtils {
     public static function getPercentage(int $pointsPerProject, int $pointsMax): mixed {
         try {
             return $percentage = round(((float)$pointsPerProject) / $pointsMax * 100);
-        } catch(Throwable $e) {
+        } catch (Throwable $e) {
             return "100";
         }
     }
-
 }

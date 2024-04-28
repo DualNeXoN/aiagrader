@@ -1534,7 +1534,6 @@ class BlockLocalDeclarationStatement extends Block {
                 $this->project->removeVariable($this->field[$i]);
                 $this->evaluateEcho("Variable <b>" . $this->field[$i] . "</b> cleared<br>");
             }
-
         } catch (Throwable $e) {
             throw new Exception($e->getMessage());
         }

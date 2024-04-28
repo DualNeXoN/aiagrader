@@ -42,9 +42,9 @@ if (isset($_POST['upload'])) {
 
     if ($uploadedFiles == count($files['name']) && empty($errors)) {
         $filePaths = ProjectHandler::discoverAiaProjects();
-        foreach($files['name'] as $file) {
-            foreach($filePaths as $filePath) {
-                if(str_ends_with($filePath, $file)) {
+        foreach ($files['name'] as $file) {
+            foreach ($filePaths as $filePath) {
+                if (str_ends_with($filePath, $file)) {
                     $project = ProjectHandler::loadProject($filePath);
                     $_SESSION['projects'][$project->getFileName()] = serialize($project);
                     break;
@@ -62,7 +62,7 @@ if (isset($_POST['upload'])) {
     deleteProject($_POST['index']);
     exit;
 } else if (isset($_POST['delete-all'])) {
-    while(count(ProjectHandler::discoverAiaProjects()) > 0) {
+    while (count(ProjectHandler::discoverAiaProjects()) > 0) {
         deleteProject(0);
     }
     exit;

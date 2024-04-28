@@ -428,9 +428,9 @@ abstract class ProjectHandler {
 
     static function getProjectsContainsBlockCount(String $blockAlias, array $projects = array()): int {
         $count = 0;
-        foreach($projects as $project) {
-            foreach($project->getBlocks() as $block) {
-                if($block->getAlias() == $blockAlias) {
+        foreach ($projects as $project) {
+            foreach ($project->getBlocks() as $block) {
+                if ($block->getAlias() == $blockAlias) {
                     $count++;
                     break;
                 }
@@ -441,9 +441,9 @@ abstract class ProjectHandler {
 
     static function getProjectsContainsComponentCount(String $componentType, array $projects = array()): int {
         $count = 0;
-        foreach($projects as $project) {
-            foreach($project->getComponents() as $component) {
-                if($component->getType() == $componentType) {
+        foreach ($projects as $project) {
+            foreach ($project->getComponents() as $component) {
+                if ($component->getType() == $componentType) {
                     $count++;
                     break;
                 }
@@ -463,9 +463,9 @@ abstract class ProjectHandler {
     static function getAllProjectsByFilename(array $filenames): array {
         $array = array();
         $projects = ProjectHandler::getAllProjects();
-        foreach($projects as $project) {
-            foreach($filenames as $filename) {
-                if($project->getFileName() == $filename) {
+        foreach ($projects as $project) {
+            foreach ($filenames as $filename) {
+                if ($project->getFileName() == $filename) {
                     $array[] = $project;
                     break;
                 }

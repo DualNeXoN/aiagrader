@@ -355,48 +355,48 @@ function generatePropertySelect(String $rulesetId, String $index): void {
 }
 
 function generateAddInputButton(String $rulesetId): void {
-    ?>
-        <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#modalInputAdd-<?= $rulesetId ?>">Add input</button>
-    
-        <div class="modal fade" id="modalInputAdd-<?= $rulesetId ?>" tabindex="-1" aria-labelledby="modalInputAdd-<?= $rulesetId ?>Label" aria-hidden="true">
-            <form action="actions/inc.rules.php" method="post">
-                <div class="modal-dialog">
-                    <div class="modal-content">
-                        <div class="modal-header">
-                            <h5 class="modal-title" id="modalInputAdd-<?= $rulesetId ?>Label">Add input dialog</h5>
-                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+?>
+    <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#modalInputAdd-<?= $rulesetId ?>">Add input</button>
+
+    <div class="modal fade" id="modalInputAdd-<?= $rulesetId ?>" tabindex="-1" aria-labelledby="modalInputAdd-<?= $rulesetId ?>Label" aria-hidden="true">
+        <form action="actions/inc.rules.php" method="post">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="modalInputAdd-<?= $rulesetId ?>Label">Add input dialog</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <input class="form-control text-center my-2" type="text" name="input-component-instance" value="" placeholder="Instance name" required></input>
+                        <div class="d-flex">
+                            <select class="form-select my-2" id="select-input-component-<?= $rulesetId ?>" name="select-input-component-<?= $rulesetId ?>" onchange="filterInputOptionsById('<?= $rulesetId ?>', '-1')">
+                                <?php foreach (Input::PROPERTIES as $component => $propertyList) : ?>
+                                    <option value="<?= $component ?>"><?= $component ?></option>
+                                <?php endforeach; ?>
+                            </select>
+                            <select class="form-select my-2" id="select-input-property-<?= $rulesetId ?>" name="select-input-property-<?= $rulesetId ?>">
+                                <?php foreach (Input::PROPERTIES as $component => $propertyList) :
+                                    if ($component != "Button") continue;
+                                    foreach ($propertyList as $property) : ?>
+                                        <option value="<?= $property ?>"><?= $property ?></option>
+                                <?php endforeach;
+                                endforeach; ?>
+                            </select>
                         </div>
-                        <div class="modal-body">
-                            <input class="form-control text-center my-2" type="text" name="input-component-instance" value="" placeholder="Instance name" required></input>
-                            <div class="d-flex">
-                                <select class="form-select my-2" id="select-input-component-<?= $rulesetId ?>" name="select-input-component-<?= $rulesetId ?>" onchange="filterInputOptionsById('<?= $rulesetId ?>', '-1')">
-                                    <?php foreach (Input::PROPERTIES as $component => $propertyList) : ?>
-                                        <option value="<?= $component ?>"><?= $component ?></option>
-                                    <?php endforeach; ?>
-                                </select>
-                                <select class="form-select my-2" id="select-input-property-<?= $rulesetId ?>" name="select-input-property-<?= $rulesetId ?>">
-                                    <?php foreach (Input::PROPERTIES as $component => $propertyList) :
-                                        if ($component != "Button") continue;
-                                        foreach ($propertyList as $property) : ?>
-                                            <option value="<?= $property ?>"><?= $property ?></option>
-                                    <?php endforeach;
-                                    endforeach; ?>
-                                </select>
-                            </div>
-                            <input class="form-control text-center my-2" type="text" name="input-value" value="" placeholder="Input value" required></input>
-                            <input type="text" name="ruleset-id" value="<?= $rulesetId ?>" hidden></input>
-                        </div>
-                        <div class="modal-footer">
-                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-                            <button type="submit" class="btn btn-primary" name="input-add">Add</button>
-                        </div>
+                        <input class="form-control text-center my-2" type="text" name="input-value" value="" placeholder="Input value" required></input>
+                        <input type="text" name="ruleset-id" value="<?= $rulesetId ?>" hidden></input>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                        <button type="submit" class="btn btn-primary" name="input-add">Add</button>
                     </div>
                 </div>
-            </form>
-        </div>
-    
-    <?php
-    }
+            </div>
+        </form>
+    </div>
+
+<?php
+}
 
 function generateAddActionButton(String $rulesetId): void {
 ?>

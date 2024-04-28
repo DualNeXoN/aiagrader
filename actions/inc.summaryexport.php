@@ -50,7 +50,7 @@ function getUsedComponents(Project $project) {
 
     $components = "";
     $index = -1;
-    foreach($componentsArray as $componentName => $componentCount) {
+    foreach ($componentsArray as $componentName => $componentCount) {
         $index++;
         $components = $components . $componentName . " (" . $componentCount . ")";
         if ($index < count($componentsArray) - 1) {
